@@ -1,1 +1,668 @@
 <!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>陰陽盤上戦記</title>
+<style>
+  body { font-family: 'Hiragino Mincho ProN', 'Noto Serif JP', 'Yu Mincho', serif; user-select: none; background-color: #f9f6f0; background-image: url('data:image/svg+xml;utf8,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100" height="100" filter="url(%23noise)" opacity="0.05"/></svg>'); color: #333333; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+  
+  #app-container { position: relative; background: #ffffff; padding: 20px 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border: 1px solid #e0d5c1; width: 440px; display: flex; flex-direction: column; align-items: center; min-height: 600px;}
+  
+  .screen { display: none; flex-direction: column; align-items: center; width: 100%; height: 100%; }
+  .screen.active { display: flex; }
+  
+  h1 { font-size: 36px; color: #5c4b37; margin-bottom: 40px; letter-spacing: 4px; text-shadow: 2px 2px 4px rgba(0,0,0,0.1); border-bottom: 2px solid #5c4b37; padding-bottom: 10px;}
+  h2 { color: #5c4b37; margin-top: 0; margin-bottom: 15px; letter-spacing: 2px; border-bottom: 2px solid #5c4b37; padding-bottom: 5px; font-size: 20px;}
+  
+  .big-btn { background: #d32f2f; color: white; font-size: 20px; padding: 15px 40px; border-radius: 40px; box-shadow: 0 4px 0 #b71c1c; border: none; cursor: pointer; transition: 0.2s; font-family: inherit; font-weight: bold; letter-spacing: 2px;}
+  .big-btn:hover { transform: translateY(2px); box-shadow: 0 2px 0 #b71c1c; }
+  .big-btn:disabled { background: #ccc; box-shadow: 0 4px 0 #999; cursor: not-allowed; }
+
+  #deck-list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 15px; max-height: 380px; overflow-y: auto; padding: 5px;}
+  .deck-card { width: 120px; border: 2px solid #e0d5c1; border-radius: 6px; padding: 8px; cursor: pointer; text-align: center; background: #fff; transition: 0.2s; position: relative;}
+  .deck-card:hover { border-color: #ff9800; background: #fff8e1; }
+  .deck-card.selected { border-color: #f57c00; background: #ffe0b2; transform: scale(1.05); box-shadow: 0 2px 8px rgba(245,124,0,0.4); }
+  .deck-card.disabled { opacity: 0.5; filter: grayscale(80%); cursor: not-allowed; }
+  .dc-name { font-weight: bold; font-size: 14px; margin-bottom: 4px; }
+  .dc-type { font-size: 10px; color: #666; margin-bottom: 4px; }
+  .dc-type.tensho { color: #d32f2f; font-weight: bold; }
+  .dc-stats { font-size: 11px; margin-bottom: 4px; }
+  .dc-cost { font-size: 11px; font-weight: bold; color: #6a1b9a; background: #f3e5f5; border-radius: 10px; display: inline-block; padding: 2px 6px;}
+
+  #deck-warning { color: #d32f2f; font-size: 12px; font-weight: bold; min-height: 18px; margin-bottom: 10px; }
+
+  #board { display: grid; grid-template-columns: repeat(7, 50px); gap: 2px; background-color: #bfa688; padding: 6px; border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 2px solid #8b7355; }
+  .cell { width: 50px; height: 50px; background-color: #fdf5e6; display: flex; justify-content: center; align-items: center; position: relative; cursor: pointer; border-radius: 2px; transition: background-color 0.2s; }
+  .cell:hover { background-color: #ffe4c4; }
+  .cell.move-target { background-color: #b3e5fc; box-shadow: inset 0 0 8px rgba(3,169,244,0.3); }
+  .cell.attack-target { background-color: #ffcdd2; box-shadow: inset 0 0 8px rgba(244,67,54,0.3); }
+  .cell.summon-target { background-color: #e1bee7; box-shadow: inset 0 0 8px rgba(156,39,176,0.3); }
+
+  .shikigami { width: 44px; height: 44px; border-radius: 4px; display: flex; flex-direction: column; justify-content: space-evenly; align-items: center; font-size: 10px; font-weight: bold; pointer-events: none; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); background-color: #ffffff; color: #222; font-family: 'Hiragino Kaku Gothic Pro', sans-serif; position: relative; transition: all 0.3s; }
+  .u-name { font-size: 11px; letter-spacing: 1px; }
+  .u-stats { font-size: 9px; display: flex; gap: 2px; }
+
+  .player { border: 2px solid #d32f2f; border-bottom-width: 4px; }
+  .enemy { border: 2px solid #1976d2; border-bottom-width: 4px; }
+  .leader { border-color: #f57f17; }
+  .leader::before { content: "将"; position: absolute; top: -8px; left: -8px; background: #f57f17; color: #fff; font-size: 10px; width: 18px; height: 18px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-family: 'Hiragino Mincho ProN', serif; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+
+  .attr-badge { position: absolute; top: -6px; right: -6px; width: 16px; height: 16px; border-radius: 50%; font-size: 10px; color: white; display: flex; justify-content: center; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.3); font-family: 'Hiragino Kaku Gothic Pro', sans-serif; transition: background-color 0.3s;}
+  .attr-木 { background-color: #4caf50; } .attr-火 { background-color: #f44336; } .attr-土 { background-color: #8d6e63; } .attr-金 { background-color: #ffb300; color: #333; } .attr-水 { background-color: #2196f3; } .attr-無 { background-color: #9e9e9e; }
+
+  .selected { outline: 3px solid #ff9800; outline-offset: 2px; transform: scale(1.05); }
+  .buffed { box-shadow: 0 0 10px #ffb300; border-color: #ffb300; }
+  .possessing { animation: float 1s infinite alternate; filter: drop-shadow(0 0 5px #00bcd4); opacity: 0.8;}
+  @keyframes float { 0% { transform: translateY(0px); } 100% { transform: translateY(-4px); } }
+
+  #ui-panel { margin-top: 15px; text-align: center; width: 380px; }
+  .resource-bar { display: flex; justify-content: space-between; font-weight: bold; padding: 6px 15px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 10px; font-size: 14px; }
+  .mp-player { color: #d32f2f; } .mp-enemy { color: #1976d2; }
+  #unit-info { font-size: 13px; color: #5c4b37; margin-bottom: 10px; background: #fff8e1; padding: 6px; border-radius: 4px; border: 1px solid #ffe082; font-weight: bold; }
+
+  .btn-group { display: flex; gap: 6px; justify-content: center; margin: 10px 0; flex-wrap: wrap; }
+  button.mode-btn { padding: 6px 10px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; font-size: 12px; transition: all 0.2s; font-family: inherit; color: #333; background: #e0e0e0; box-shadow: 0 3px 0 #bdbdbd; }
+  button.mode-btn:active { transform: translateY(3px); box-shadow: none; }
+  .mode-btn:hover { background: #d5d5d5; }
+  .mode-btn.active { background: #5c4b37; color: #fff; box-shadow: 0 3px 0 #3e3224; }
+  
+  #btn-summon { background: #e1bee7; color: #6a1b9a; border: 1px solid #ab47bc; box-shadow: 0 3px 0 #ab47bc;}
+  #btn-possess { background: #b2ebf2; color: #00838f; border: 1px solid #00bcd4; box-shadow: 0 3px 0 #00bcd4;}
+  #btn-cancel { background: #ffe0b2; color: #e65100; border: 1px solid #ff9800; box-shadow: 0 3px 0 #ff9800;}
+  
+  #execute-btn { background: #4caf50; color: white; width: 100%; font-size: 16px; margin-top: 5px; padding: 12px; box-shadow: 0 4px 0 #388e3c; letter-spacing: 2px; border: none; border-radius: 6px; font-family: inherit; font-weight: bold; cursor: pointer;}
+  #execute-btn:hover { filter: brightness(1.05); }
+  
+  #summon-panel { background: #f3e5f5; border: 1px solid #ab47bc; padding: 8px; border-radius: 6px; margin-bottom: 10px; display: none; flex-wrap: wrap; justify-content: center; gap: 4px;}
+  .summon-btn { background: #ab47bc; color: white; font-size: 11px; padding: 4px 8px; border: none; border-radius: 4px; box-shadow: 0 2px 0 #7b1fa2; cursor: pointer;}
+  .summon-btn:active { transform: translateY(2px); box-shadow: none; }
+
+  #log { background: #fafafa; color: #333; padding: 10px; width: 360px; height: 110px; overflow-y: auto; font-size: 12px; margin-top: 10px; border-radius: 6px; text-align: left; line-height: 1.5; border: 1px solid #ccc; font-family: 'Hiragino Kaku Gothic Pro', sans-serif; }
+  .log-atk { color: #d32f2f; font-weight: bold; } .log-heal { color: #1976d2; font-weight: bold; } .log-sys { color: #e65100; } .log-possess { color: #00838f; font-weight: bold; }
+
+  #result-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); border-radius: 12px; z-index: 100; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+  #result-title { font-size: 48px; color: #333; margin-bottom: 10px; font-family: 'Hiragino Mincho ProN', serif; }
+  #result-desc { font-size: 18px; color: #666; margin-bottom: 40px; letter-spacing: 1px;}
+</style>
+</head>
+<body>
+<div id="app-container">
+
+  <div id="screen-title" class="screen active">
+    <h1>陰陽盤上戦記</h1>
+    <p style="margin-bottom: 40px; color:#666;">〜 同時プロット・タクティクス 〜</p>
+    <button class="big-btn" onclick="showScreen('screen-deck')">はじめる</button>
+  </div>
+
+  <div id="screen-deck" class="screen">
+    <h2>式神編成（3体選択）</h2>
+    <div id="deck-list"></div>
+    <div id="deck-warning"></div>
+    <div id="deck-status" style="font-weight:bold; margin-bottom:15px; color:#d32f2f;">選択中: 0 / 3</div>
+    <button id="btn-start-battle" class="big-btn" onclick="startBattle()" disabled>出陣</button>
+  </div>
+
+  <div id="screen-battle" class="screen">
+    <h2>陰陽盤上戦記</h2>
+    <div id="board"></div>
+
+    <div id="ui-panel">
+      <div class="resource-bar">
+        <span class="mp-player">陣 呪力: <span id="val-mp-player">5</span></span>
+        <span class="mp-enemy">敵 呪力: <span id="val-mp-enemy">5</span></span>
+      </div>
+
+      <div id="unit-info">采配を下す式神を選べ</div>
+      
+      <div id="summon-panel"></div>
+
+      <div class="btn-group">
+        <button id="btn-move" class="mode-btn">移動</button>
+        <button id="btn-attack" class="mode-btn">術(攻/援)</button>
+        <button id="btn-possess" class="mode-btn">◆憑依</button>
+        <button id="btn-summon" class="mode-btn">★召喚</button>
+        <button id="btn-cancel" class="mode-btn">取消</button>
+      </div>
+      <button id="execute-btn">ターン確定（一斉解決）</button>
+    </div>
+
+    <div id="log"></div>
+
+    <div id="result-overlay">
+      <div id="result-title"></div>
+      <div id="result-desc"></div>
+      <button class="big-btn" onclick="showScreen('screen-title')">タイトルへ戻る</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==========================================
+// 1. マスターデータ拡充（双星の陰陽師ライクな調整）
+// ==========================================
+const GAME_CONFIG = {
+  MP_REWARD: { move: 1, risk_zone: 1, turn_end: 0 },
+  DAMAGE: { weak_multiplier: 1.5, resist_multiplier: 0.5, collision: 2 },
+  BUFF: { atk_boost: 3 }
+};
+const ELEMENT_WEAK = { '木': '土', '土': '水', '水': '火', '火': '金', '金': '木' };
+const ELEMENT_BOOST = { '木': '火', '火': '土', '土': '金', '金': '水', '水': '木' };
+const BOARD_SIZE = 7;
+
+const SHIKIGAMI_MASTER = [
+  // ザコ（10体）
+  { id: 'z_onibi', name: "鬼火", element: "火", hp: 4, atk: 2, reach: 1, cost: 1, isTensho: false, desc: "低コスト" },
+  { id: 'z_dorotabo', name: "泥田坊", element: "土", hp: 8, atk: 1, reach: 1, cost: 1, isTensho: false, desc: "低コスト・耐久" },
+  { id: 'z_kodama', name: "木霊", element: "木", hp: 5, atk: 1, reach: 1, cost: 1, isTensho: false, desc: "低コスト" },
+  { id: 'z_kappa', name: "河童", element: "水", hp: 6, atk: 2, reach: 1, cost: 2, isTensho: false, desc: "標準" },
+  { id: 'z_kamaitachi', name: "鎌鼬", element: "金", hp: 4, atk: 3, reach: 2, cost: 2, isTensho: false, desc: "射程2" },
+  { id: 'z_nurikabe', name: "塗壁", element: "土", hp: 12, atk: 1, reach: 1, cost: 2, isTensho: false, desc: "高耐久の壁" },
+  { id: 'z_yukionna', name: "雪女", element: "水", hp: 5, atk: 2, reach: 2, cost: 2, isTensho: false, desc: "遠距離攻撃" },
+  { id: 'z_wanyudo', name: "輪入道", element: "火", hp: 4, atk: 4, reach: 1, cost: 2, isTensho: false, desc: "攻撃特化" },
+  { id: 'z_tengu', name: "烏天狗", element: "木", hp: 6, atk: 3, reach: 2, cost: 3, isTensho: false, desc: "高機動・射程2" },
+  { id: 'z_kyoki', name: "狂骨", element: "金", hp: 4, atk: 5, reach: 1, cost: 2, isTensho: false, desc: "捨て身の火力" },
+
+  // 十二天将（6体）
+  // 騰蛇は完全なる攻撃特化のバーサーカー仕様に変更。白虎は攻防バランスの良いアタッカー。天一は最強の貴人に変更。
+  { id: 's_seiryu', name: "青龍", element: "木", hp: 12, atk: 5, reach: 2, cost: 3, isTensho: true, tenshoAbility: 'reach', desc: "憑依:射程+1" },
+  { id: 's_genbu', name: "玄武", element: "水", hp: 15, atk: 2, reach: 1, cost: 3, isTensho: true, tenshoAbility: 'hp', desc: "憑依:HP+10" },
+  { id: 's_touda', name: "騰蛇", element: "火", hp: 8, atk: 6, reach: 3, cost: 4, isTensho: true, tenshoAbility: 'atk_max', desc: "憑依:攻+5" },
+  { id: 's_byakko', name: "白虎", element: "金", hp: 10, atk: 7, reach: 1, cost: 4, isTensho: true, tenshoAbility: 'bruiser', desc: "憑依:攻+3/HP+6" },
+  { id: 's_sujaku', name: "朱雀", element: "火", hp: 10, atk: 5, reach: 2, cost: 4, isTensho: true, tenshoAbility: 'balance', desc: "憑依:攻+2/HP+5" },
+  { id: 's_kijin', name: "貴人", element: "土", hp: 12, atk: 6, reach: 2, cost: 4, isTensho: true, tenshoAbility: 'kijin', desc: "憑依:攻+3/HP+5" }
+];
+
+const INITIAL_UNITS = [
+  { id: "p_leader", name: "陰陽師", owner: "player", element: "無", hp: 20, atk: 2, buffAtk: 0, x: 3, y: 6, reach: 1, isLeader: true },
+  { id: "e_leader", name: "ケガレ", owner: "enemy", element: "無", hp: 25, atk: 3, buffAtk: 0, x: 3, y: 0, reach: 1, isLeader: true },
+  { id: "u1", name: "前鬼", owner: "player", element: "木", hp: 10, atk: 4, buffAtk: 0, x: 2, y: 5, reach: 1, isTensho: false },
+  { id: "u2", name: "後鬼", owner: "enemy", element: "水", hp: 10, atk: 4, buffAtk: 0, x: 4, y: 1, reach: 2, isTensho: false }
+];
+
+// ==========================================
+// 2. 状態管理・画面遷移
+// ==========================================
+let playerDeckIds = [];
+let gameData = { units: [] };
+let mp = { player: 0, enemy: 0 };
+let uiState = 'IDLE'; 
+let activeUnitId = null;
+let planned = {}; let plannedSummons = []; let selectedSummonTemplate = null; let unitCounter = 3;
+
+function showScreen(screenId) {
+  document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+  document.getElementById(screenId).classList.add('active');
+  if (screenId === 'screen-deck') initDeckScreen();
+}
+
+function initDeckScreen() {
+  playerDeckIds = [];
+  document.getElementById('deck-warning').innerText = "";
+  const listEl = document.getElementById('deck-list');
+  listEl.innerHTML = '';
+  
+  SHIKIGAMI_MASTER.forEach(s => {
+    const card = document.createElement('div');
+    card.className = 'deck-card';
+    card.dataset.id = s.id;
+    const typeClass = s.isTensho ? "dc-type tensho" : "dc-type";
+    card.innerHTML = `
+      <div class="attr-badge attr-${s.element}" style="position:static; margin: 0 auto 4px;">${s.element}</div>
+      <div class="dc-name">${s.name}</div>
+      <div class="${typeClass}">${s.isTensho ? '【十二天将】' : '【通常式神】'}</div>
+      <div class="dc-stats">⚔️${s.atk} 💖${s.hp} 射${s.reach}</div>
+      <div class="dc-cost">呪力:${s.cost}</div>
+      <div style="font-size:9px; color:#888; margin-top:4px;">${s.desc}</div>
+    `;
+    card.onclick = () => toggleDeckSelection(card, s.id);
+    listEl.appendChild(card);
+  });
+  updateDeckStatus();
+}
+
+function toggleDeckSelection(cardEl, id) {
+  const warningEl = document.getElementById('deck-warning');
+  warningEl.innerText = "";
+  const index = playerDeckIds.indexOf(id);
+  const targetShikigami = SHIKIGAMI_MASTER.find(s => s.id === id);
+
+  if (index > -1) {
+    playerDeckIds.splice(index, 1);
+    cardEl.classList.remove('selected');
+  } else {
+    if (playerDeckIds.length >= 3) {
+      warningEl.innerText = "※デッキは最大3体までです。";
+      return;
+    }
+    if (targetShikigami.isTensho) {
+      const currentTenshoCount = playerDeckIds.filter(deckId => {
+        return SHIKIGAMI_MASTER.find(m => m.id === deckId).isTensho;
+      }).length;
+      if (currentTenshoCount >= 1) {
+        warningEl.innerText = "※十二天将はデッキに1体までしか編成できません！";
+        return;
+      }
+    }
+    playerDeckIds.push(id);
+    cardEl.classList.add('selected');
+  }
+  updateDeckStatus();
+}
+
+function updateDeckStatus() {
+  const count = playerDeckIds.length;
+  document.getElementById('deck-status').innerText = `選択中: ${count} / 3`;
+  document.getElementById('btn-start-battle').disabled = (count !== 3);
+  
+  const hasTensho = playerDeckIds.some(id => SHIKIGAMI_MASTER.find(m => m.id === id).isTensho);
+  document.querySelectorAll('.deck-card').forEach(card => {
+    const s = SHIKIGAMI_MASTER.find(m => m.id === card.dataset.id);
+    if (s.isTensho && hasTensho && !card.classList.contains('selected')) {
+      card.classList.add('disabled');
+    } else {
+      card.classList.remove('disabled');
+    }
+  });
+}
+
+function getEffectiveStats(unit) {
+  let effAtk = unit.atk + unit.buffAtk;
+  let effReach = unit.reach;
+  
+  if (unit.isLeader) {
+    gameData.units.forEach(ally => {
+      if (ally.owner === unit.owner && planned[ally.id]?.possess) {
+        effAtk += Math.max(1, Math.ceil(ally.atk * 0.5));
+        if (ally.isTensho) {
+          if (ally.tenshoAbility === 'atk_max') effAtk += 5;
+          if (ally.tenshoAbility === 'reach') effReach += 1;
+          if (ally.tenshoAbility === 'balance') effAtk += 2;
+          if (ally.tenshoAbility === 'bruiser') effAtk += 3;
+          if (ally.tenshoAbility === 'kijin') effAtk += 3;
+        }
+      }
+    });
+  }
+  return { effAtk, effReach };
+}
+
+// ==========================================
+// 4. バトル画面
+// ==========================================
+const logEl = document.getElementById('log');
+function addLog(msg, type="") { 
+  let cssClass = "";
+  if(type === "atk") cssClass = "log-atk";
+  if(type === "heal") cssClass = "log-heal";
+  if(type === "sys") cssClass = "log-sys";
+  if(type === "possess") cssClass = "log-possess";
+  logEl.innerHTML += `<span class="${cssClass}">${msg}</span><br>`; 
+  logEl.scrollTop = logEl.scrollHeight; 
+}
+
+function startBattle() {
+  const panel = document.getElementById('summon-panel');
+  panel.innerHTML = '';
+  playerDeckIds.forEach(id => {
+    const s = SHIKIGAMI_MASTER.find(m => m.id === id);
+    const btn = document.createElement('button');
+    btn.className = 'summon-btn';
+    btn.innerText = `${s.name} (呪${s.cost})`;
+    btn.onclick = () => startSummon(s.id);
+    panel.appendChild(btn);
+  });
+
+  document.getElementById('btn-move').onclick = () => setMode('SELECTING_MOVE');
+  document.getElementById('btn-attack').onclick = () => setMode('SELECTING_ATTACK');
+  document.getElementById('btn-possess').onclick = () => {
+    if (!activeUnitId) return;
+    const u = gameData.units.find(un => un.id === activeUnitId);
+    if (u.isLeader) { addLog(`[警告] 陰陽師自身は憑依できぬ。`, "sys"); return; }
+    if (u.owner !== 'player') { addLog(`[警告] 敵の式神は選べぬ。`, "sys"); return; }
+    planned[activeUnitId] = { move: null, attack: null, possess: true };
+    uiState = 'IDLE'; addLog(`【予約】${u.name} を陰陽師に憑依させる。`, "possess"); render();
+  };
+  document.getElementById('btn-summon').onclick = () => {
+    uiState = 'IDLE'; document.getElementById('summon-panel').style.display = 'flex'; render();
+  };
+  document.getElementById('btn-cancel').onclick = cancelActions;
+  document.getElementById('execute-btn').onclick = executeTurn;
+
+  const board = document.getElementById('board');
+  board.innerHTML = ''; 
+  for (let y = 0; y < BOARD_SIZE; y++) {
+    for (let x = 0; x < BOARD_SIZE; x++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.onclick = () => handleCellClick(x, y);
+      board.appendChild(cell);
+    }
+  }
+
+  gameData.units = JSON.parse(JSON.stringify(INITIAL_UNITS));
+  mp = { player: 5, enemy: 5 };
+  planned = {}; plannedSummons = []; uiState = 'IDLE'; activeUnitId = null; unitCounter = INITIAL_UNITS.length;
+  document.getElementById('result-overlay').style.display = 'none';
+  logEl.innerHTML = "";
+  addLog("システム: 結界が構築された。戦闘開始！", "sys");
+  showScreen('screen-battle');
+  render();
+}
+
+function setMode(mode) {
+  if (!activeUnitId) return;
+  uiState = mode; document.getElementById('summon-panel').style.display = 'none'; render();
+}
+
+function cancelActions() {
+  if (activeUnitId && planned[activeUnitId]) planned[activeUnitId] = { move: null, attack: null, possess: false };
+  plannedSummons = []; uiState = 'IDLE'; document.getElementById('summon-panel').style.display = 'none'; render();
+}
+
+function startSummon(templateId) {
+  const template = SHIKIGAMI_MASTER.find(m => m.id === templateId);
+  const currentReservedMP = plannedSummons.reduce((sum, s) => sum + s.cost, 0);
+  if (mp.player - currentReservedMP < template.cost) {
+    addLog(`[警告] 呪力が足りませぬ。(必要: ${template.cost})`, "sys"); return;
+  }
+  selectedSummonTemplate = templateId; uiState = 'SELECTING_SUMMON_TARGET';
+  document.getElementById('unit-info').innerText = `【召喚】${template.name} の配置マスを選択`;
+}
+
+function handleCellClick(x, y) {
+  const unit = gameData.units.find(u => u.x === x && u.y === y);
+
+  if (uiState === 'SELECTING_SUMMON_TARGET') {
+    const leader = gameData.units.find(u => u.isLeader && u.owner === 'player');
+    const leaderOrigin = planned[leader.id]?.move || { x: leader.x, y: leader.y };
+    
+    if (Math.abs(leaderOrigin.x - x) <= 1 && Math.abs(leaderOrigin.y - y) <= 1) {
+      // ★NEW: 移動で「空く予定」のマスには召喚可能、「埋まる予定」のマスには召喚不可にする
+      const isProjectedOccupied = gameData.units.some(u => {
+        const px = planned[u.id]?.move ? planned[u.id].move.x : u.x;
+        const py = planned[u.id]?.move ? planned[u.id].move.y : u.y;
+        return px === x && py === y && !planned[u.id]?.possess; // 憑依で消えるユニットは無視
+      });
+      const alreadySummoned = plannedSummons.find(s => s.x === x && s.y === y);
+      
+      if (isProjectedOccupied || alreadySummoned) {
+        addLog(`[警告] そのマスは移動後のユニットで埋まるか、既に予約済です。`, "sys");
+        return;
+      }
+
+      const template = SHIKIGAMI_MASTER.find(m => m.id === selectedSummonTemplate);
+      plannedSummons.push({ templateId: selectedSummonTemplate, x: x, y: y, cost: template.cost });
+      addLog(`【予約】${template.name} の召喚を命じた。`);
+      uiState = 'IDLE'; document.getElementById('summon-panel').style.display = 'none';
+    } else { addLog(`[警告] 召喚は陰陽師の周囲のみ可能です。`, "sys"); }
+    render(); return;
+  }
+  
+  if (unit && uiState !== 'SELECTING_ATTACK') {
+    if (unit.owner === 'enemy') {
+       const stats = getEffectiveStats(unit);
+       addLog(`※敵将の情報: ${unit.name} (HP:${unit.hp} / 攻:${stats.effAtk} / 射:${stats.effReach} / 属:${unit.element})`, "sys");
+    } else {
+       activeUnitId = unit.id; uiState = 'IDLE'; document.getElementById('summon-panel').style.display = 'none';
+       if (!planned[activeUnitId]) planned[activeUnitId] = { move: null, attack: null, possess: false };
+    }
+  } else if (uiState === 'SELECTING_MOVE') {
+    const u = gameData.units.find(u => u.id === activeUnitId);
+    if (Math.abs(u.x - x) <= 1 && Math.abs(u.y - y) <= 1) {
+      planned[activeUnitId].move = { x, y }; planned[activeUnitId].possess = false; uiState = 'IDLE';
+      
+      if (planned[activeUnitId].attack) {
+        const ax = planned[activeUnitId].attack.x; const ay = planned[activeUnitId].attack.y;
+        const stats = getEffectiveStats(u);
+        if (Math.abs(x - ax) > stats.effReach || Math.abs(y - ay) > stats.effReach) planned[activeUnitId].attack = null;
+      }
+      if (u.isLeader && u.owner === 'player') {
+        plannedSummons = plannedSummons.filter(s => Math.abs(x - s.x) <= 1 && Math.abs(y - s.y) <= 1);
+      }
+    } else { addLog(`[警告] 移動は一歩のみです。`, "sys"); }
+  } else if (uiState === 'SELECTING_ATTACK') {
+    const u = gameData.units.find(u => u.id === activeUnitId);
+    const origin = planned[activeUnitId].move || { x: u.x, y: u.y };
+    const stats = getEffectiveStats(u);
+    if (Math.abs(origin.x - x) <= stats.effReach && Math.abs(origin.y - y) <= stats.effReach) {
+      planned[activeUnitId].attack = { x, y }; planned[activeUnitId].possess = false; uiState = 'IDLE';
+    } else { addLog(`[警告] 射程が届きませぬ。`, "sys"); }
+  }
+  render();
+}
+
+function executeTurn() { planEnemyActionsAI(); setTimeout(resolveTurn, 400); }
+
+function planEnemyActionsAI() {
+  const enemies = gameData.units.filter(u => u.owner === 'enemy');
+  const players = gameData.units.filter(u => u.owner === 'player');
+  enemies.forEach(enemy => {
+    if (!planned[enemy.id]) planned[enemy.id] = { move: null, attack: null };
+    let closestPlayer = null; let minDistance = Infinity;
+    players.forEach(p => {
+      const dist = Math.max(Math.abs(p.x - enemy.x), Math.abs(p.y - enemy.y));
+      if (dist < minDistance) { minDistance = dist; closestPlayer = p; }
+    });
+    if (!closestPlayer) return;
+    if (minDistance <= enemy.reach) {
+      planned[enemy.id].attack = { x: closestPlayer.x, y: closestPlayer.y };
+    } else {
+      const dx = Math.sign(closestPlayer.x - enemy.x);
+      const dy = Math.sign(closestPlayer.y - enemy.y);
+      const targetX = enemy.x + dx; const targetY = enemy.y + dy;
+      const isOccupied = gameData.units.find(u => u.x === targetX && u.y === targetY);
+      if (!isOccupied) planned[enemy.id].move = { x: targetX, y: targetY };
+    }
+  });
+}
+
+function calculateManaGain(unit, prevX, prevY) {
+  let gainedMP = 0;
+  if (unit.x !== prevX || unit.y !== prevY) gainedMP += GAME_CONFIG.MP_REWARD.move;
+  const isNearEnemy = gameData.units.some(other => 
+    other.owner !== unit.owner && Math.abs(other.x - unit.x) <= 1 && Math.abs(other.y - unit.y) <= 1
+  );
+  if (isNearEnemy) gainedMP += GAME_CONFIG.MP_REWARD.risk_zone;
+  return gainedMP;
+}
+
+function resolveTurn() {
+  addLog("=== ターン一斉解決 ===", "sys");
+  gameData.units.forEach(u => { u.buffAtk = 0; });
+
+  const moveDestinations = {};
+  gameData.units.forEach(u => {
+    if (planned[u.id]?.move) {
+      const key = `${planned[u.id].move.x},${planned[u.id].move.y}`;
+      if (!moveDestinations[key]) moveDestinations[key] = [];
+      moveDestinations[key].push(u.id);
+    }
+  });
+
+  for (const [key, unitIds] of Object.entries(moveDestinations)) {
+    if (unitIds.length > 1) {
+      addLog(`【激突】盤上で衝突発生！移動阻害！`, "atk");
+      unitIds.forEach(id => {
+         const unit = gameData.units.find(u => u.id === id);
+         if(unit) { 
+           unit.hp -= GAME_CONFIG.DAMAGE.collision; 
+           addLog(` ＞ ${unit.name} に${GAME_CONFIG.DAMAGE.collision}の痛手!`, "atk");
+           planned[id].move = null; 
+         }
+      });
+    }
+  }
+
+  let turnMpGain = { player: GAME_CONFIG.MP_REWARD.turn_end, enemy: GAME_CONFIG.MP_REWARD.turn_end };
+  gameData.units.forEach(u => {
+    const prevX = u.x; const prevY = u.y;
+    if (planned[u.id]?.move) { u.x = planned[u.id].move.x; u.y = planned[u.id].move.y; }
+    const gain = calculateManaGain(u, prevX, prevY);
+    if (gain > 0) turnMpGain[u.owner] += gain;
+  });
+  mp.player += turnMpGain.player; mp.enemy += turnMpGain.enemy;
+
+  // ② 憑依解決（属性の継承を追加）
+  gameData.units.forEach(u => {
+    if (planned[u.id]?.possess && u.hp > 0) {
+      const leader = gameData.units.find(l => l.isLeader && l.owner === u.owner);
+      if (leader && leader.hp > 0) {
+        const hpBonus = Math.max(1, Math.ceil(u.hp * 0.5));
+        const atkBonus = Math.max(1, Math.ceil(u.atk * 0.5));
+        leader.hp += hpBonus; leader.atk += atkBonus;
+        leader.element = u.element; // ★NEW: 陰陽師の属性を式神の属性に書き換え
+
+        let tenshoMsg = "";
+        if (u.isTensho) {
+          if (u.tenshoAbility === 'reach') { leader.reach += 1; tenshoMsg = " 【青龍の加護: 射程+1】"; } 
+          else if (u.tenshoAbility === 'atk_max') { leader.atk += 5; tenshoMsg = " 【騰蛇の加護: 攻+5】"; }
+          else if (u.tenshoAbility === 'hp') { leader.hp += 10; tenshoMsg = " 【玄武の加護: HP+10】"; }
+          else if (u.tenshoAbility === 'balance') { leader.atk += 2; leader.hp += 5; tenshoMsg = " 【朱雀の加護: 攻+2/HP+5】"; }
+          else if (u.tenshoAbility === 'bruiser') { leader.atk += 3; leader.hp += 6; tenshoMsg = " 【白虎の加護: 攻+3/HP+6】"; }
+          else if (u.tenshoAbility === 'kijin') { leader.atk += 3; leader.hp += 5; tenshoMsg = " 【貴人の加護: 攻+3/HP+5】"; }
+        }
+
+        addLog(`【憑依】${u.name} が陰陽師と一体化した！ (HP+${hpBonus} / 攻+${atkBonus} / 属性:${u.element})${tenshoMsg}`, "possess");
+        u.hp = 0; 
+      }
+    }
+  });
+
+  // ③ 攻撃解決
+  gameData.units.forEach(u => {
+    const atkPlot = planned[u.id]?.attack;
+    if (!atkPlot) return;
+    const target = gameData.units.find(t => t.x === atkPlot.x && t.y === atkPlot.y);
+    
+    if (target && target.id !== u.id && u.hp > 0 && !planned[u.id]?.possess) { 
+      if (target.owner !== u.owner) {
+        let dmg = u.atk + u.buffAtk; let msg = "";
+        if (ELEMENT_WEAK[u.element] === target.element) {
+          dmg = Math.floor(dmg * GAME_CONFIG.DAMAGE.weak_multiplier); msg = "(弱点!)";
+        } else if (ELEMENT_BOOST[u.element] === target.element) {
+          dmg = Math.floor(dmg * GAME_CONFIG.DAMAGE.resist_multiplier); msg = "(軽減...)";
+        }
+        target.hp -= dmg;
+        addLog(`【攻撃】${u.name} → 敵の${target.name}に ${dmg}ダメージ ${msg}`, "atk");
+      } else {
+        if (ELEMENT_BOOST[u.element] === target.element) {
+          target.buffAtk += GAME_CONFIG.BUFF.atk_boost;
+          addLog(`【支援】${u.name} → 味方の${target.name}に相生の気！(次ターン攻+${GAME_CONFIG.BUFF.atk_boost})`, "heal");
+        }
+      }
+    } else if (u.hp > 0 && !planned[u.id]?.possess) { 
+      addLog(`【空振り】${u.name}の術は空を切った...`); 
+    }
+  });
+
+  // ④ 召喚解決
+  plannedSummons.forEach(summon => {
+    const isOccupied = gameData.units.find(u => u.x === summon.x && u.y === summon.y);
+    const template = SHIKIGAMI_MASTER.find(m => m.id === summon.templateId);
+    if (isOccupied) {
+      addLog(`【召喚失敗】その場所には既に者がおり召喚できなかった`, "sys");
+    } else {
+      mp.player -= summon.cost; unitCounter++;
+      gameData.units.push({
+        id: `u_${unitCounter}`, name: template.name, owner: 'player', element: template.element,
+        hp: template.hp, atk: template.atk, buffAtk: 0, reach: template.reach, 
+        isTensho: template.isTensho, tenshoAbility: template.tenshoAbility,
+        x: summon.x, y: summon.y
+      });
+      addLog(`【召喚】${template.name} が戦場に顕現した！`, "heal");
+    }
+  });
+  plannedSummons = [];
+
+  let playerLeaderDead = false; let enemyLeaderDead = false;
+  gameData.units = gameData.units.filter(u => {
+    if (u.hp <= 0) {
+      if (!planned[u.id]?.possess) addLog(`【撃破】${u.name} が倒れた！`, "atk");
+      if (u.isLeader) {
+        if (u.owner === 'player') playerLeaderDead = true;
+        if (u.owner === 'enemy') enemyLeaderDead = true;
+      }
+      return false;
+    }
+    return true;
+  });
+
+  planned = {}; activeUnitId = null; render();
+
+  if (playerLeaderDead || enemyLeaderDead) {
+    let title = ""; let desc = ""; let color = "";
+    if (playerLeaderDead && enemyLeaderDead) {
+      title = "引き分け"; desc = "両陣営の陰陽師が同時に倒れました。"; color = "#666";
+    } else if (playerLeaderDead) {
+      title = "敗北"; desc = "味方の陰陽師が討ち取られました..."; color = "#d32f2f";
+    } else {
+      title = "勝利"; desc = "見事、敵将を討ち取りました！"; color = "#2e7d32";
+    }
+    document.getElementById('result-title').innerText = title;
+    document.getElementById('result-title').style.color = color;
+    document.getElementById('result-desc').innerText = desc;
+    document.getElementById('result-overlay').style.display = 'flex';
+  }
+}
+
+function render() {
+  const cells = document.querySelectorAll('.cell');
+  cells.forEach(c => { c.innerHTML = ''; c.className = 'cell'; });
+
+  const currentReservedMP = plannedSummons.reduce((sum, s) => sum + s.cost, 0);
+  document.getElementById('val-mp-player').innerText = mp.player - currentReservedMP;
+  document.getElementById('val-mp-enemy').innerText = mp.enemy;
+
+  if (uiState !== 'SELECTING_SUMMON_TARGET') {
+    const activeUnit = gameData.units.find(u => u.id === activeUnitId);
+    if (activeUnit) {
+      const stats = getEffectiveStats(activeUnit);
+      const atkText = stats.effAtk > activeUnit.atk ? `${stats.effAtk}(予測)` : stats.effAtk;
+      const reachText = stats.effReach > activeUnit.reach ? `${stats.effReach}(予測)` : stats.effReach;
+      
+      document.getElementById('unit-info').innerText = `選択中: ${activeUnit.name} (攻${atkText} / 射${reachText} / ${activeUnit.element})`;
+      
+      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+      if (uiState === 'SELECTING_MOVE') document.getElementById('btn-move').classList.add('active');
+      if (uiState === 'SELECTING_ATTACK') document.getElementById('btn-attack').classList.add('active');
+    } else {
+      document.getElementById('unit-info').innerText = `采配を下す式神を選べ`;
+      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    }
+  }
+
+  plannedSummons.forEach(s => {
+    const idx = s.y * BOARD_SIZE + s.x;
+    cells[idx].classList.add('summon-target');
+  });
+
+  gameData.units.forEach(u => {
+    const idx = u.y * BOARD_SIZE + u.x;
+    const div = document.createElement('div');
+    let classes = `shikigami ${u.owner}`;
+    if (u.id === activeUnitId) classes += ' selected';
+    if (u.isLeader) classes += ' leader';
+    if (u.buffAtk > 0) classes += ' buffed'; 
+    if (planned[u.id]?.possess) classes += ' possessing';
+    div.className = classes;
+    
+    // 陰陽師の属性も憑依で変化するため動的にバッジを生成
+    const attrBadge = `<div class="attr-badge attr-${u.element}">${u.element}</div>`;
+    const dispAtk = u.isLeader ? getEffectiveStats(u).effAtk : u.atk + u.buffAtk;
+    
+    div.innerHTML = `
+      ${attrBadge}
+      <div class="u-name">${u.name}</div>
+      <div class="u-stats">⚔️${dispAtk} 💖${u.hp}</div>
+    `;
+    cells[idx].appendChild(div);
+
+    if (planned[u.id]?.move) cells[planned[u.id].move.y * BOARD_SIZE + planned[u.id].move.x].classList.add('move-target');
+    if (planned[u.id]?.attack) cells[planned[u.id].attack.y * BOARD_SIZE + planned[u.id].attack.x].classList.add('attack-target');
+  });
+}
+
+showScreen('screen-title');
+</script>
+</body>
+</html>
