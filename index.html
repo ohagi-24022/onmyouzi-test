@@ -2,8 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>陰陽盤上戦記</title>
 <style>
   body { font-family: 'Hiragino Mincho ProN', 'Noto Serif JP', 'Yu Mincho', serif; user-select: none; background-color: #f9f6f0; background-image: url('data:image/svg+xml;utf8,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100" height="100" filter="url(%23noise)" opacity="0.05"/></svg>'); color: #333333; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
@@ -140,7 +139,7 @@
 
 <script>
 // ==========================================
-// 1. マスターデータ拡充（双星の陰陽師ライクな調整）
+// 1. マスターデータ
 // ==========================================
 const GAME_CONFIG = {
   MP_REWARD: { move: 1, risk_zone: 1, turn_end: 0 },
@@ -152,7 +151,6 @@ const ELEMENT_BOOST = { '木': '火', '火': '土', '土': '金', '金': '水', 
 const BOARD_SIZE = 7;
 
 const SHIKIGAMI_MASTER = [
-  // ザコ（10体）
   { id: 'z_onibi', name: "鬼火", element: "火", hp: 4, atk: 2, reach: 1, cost: 1, isTensho: false, desc: "低コスト" },
   { id: 'z_dorotabo', name: "泥田坊", element: "土", hp: 8, atk: 1, reach: 1, cost: 1, isTensho: false, desc: "低コスト・耐久" },
   { id: 'z_kodama', name: "木霊", element: "木", hp: 5, atk: 1, reach: 1, cost: 1, isTensho: false, desc: "低コスト" },
@@ -164,8 +162,6 @@ const SHIKIGAMI_MASTER = [
   { id: 'z_tengu', name: "烏天狗", element: "木", hp: 6, atk: 3, reach: 2, cost: 3, isTensho: false, desc: "高機動・射程2" },
   { id: 'z_kyoki', name: "狂骨", element: "金", hp: 4, atk: 5, reach: 1, cost: 2, isTensho: false, desc: "捨て身の火力" },
 
-  // 十二天将（6体）
-  // 騰蛇は完全なる攻撃特化のバーサーカー仕様に変更。白虎は攻防バランスの良いアタッカー。天一は最強の貴人に変更。
   { id: 's_seiryu', name: "青龍", element: "木", hp: 12, atk: 5, reach: 2, cost: 3, isTensho: true, tenshoAbility: 'reach', desc: "憑依:射程+1" },
   { id: 's_genbu', name: "玄武", element: "水", hp: 15, atk: 2, reach: 1, cost: 3, isTensho: true, tenshoAbility: 'hp', desc: "憑依:HP+10" },
   { id: 's_touda', name: "騰蛇", element: "火", hp: 8, atk: 6, reach: 3, cost: 4, isTensho: true, tenshoAbility: 'atk_max', desc: "憑依:攻+5" },
@@ -289,7 +285,7 @@ function getEffectiveStats(unit) {
 }
 
 // ==========================================
-// 4. バトル画面
+// 4. バトル画面 (UI・クリック処理)
 // ==========================================
 const logEl = document.getElementById('log');
 function addLog(msg, type="") { 
@@ -371,64 +367,84 @@ function startSummon(templateId) {
   document.getElementById('unit-info').innerText = `【召喚】${template.name} の配置マスを選択`;
 }
 
+// ★大幅修正: クリックイベントの競合をステートマシンで完全に分離
 function handleCellClick(x, y) {
   const unit = gameData.units.find(u => u.x === x && u.y === y);
 
-  if (uiState === 'SELECTING_SUMMON_TARGET') {
-    const leader = gameData.units.find(u => u.isLeader && u.owner === 'player');
-    const leaderOrigin = planned[leader.id]?.move || { x: leader.x, y: leader.y };
-    
-    if (Math.abs(leaderOrigin.x - x) <= 1 && Math.abs(leaderOrigin.y - y) <= 1) {
-      // ★NEW: 移動で「空く予定」のマスには召喚可能、「埋まる予定」のマスには召喚不可にする
-      const isProjectedOccupied = gameData.units.some(u => {
-        const px = planned[u.id]?.move ? planned[u.id].move.x : u.x;
-        const py = planned[u.id]?.move ? planned[u.id].move.y : u.y;
-        return px === x && py === y && !planned[u.id]?.possess; // 憑依で消えるユニットは無視
-      });
-      const alreadySummoned = plannedSummons.find(s => s.x === x && s.y === y);
-      
-      if (isProjectedOccupied || alreadySummoned) {
-        addLog(`[警告] そのマスは移動後のユニットで埋まるか、既に予約済です。`, "sys");
-        return;
+  switch (uiState) {
+    case 'IDLE':
+      if (unit) {
+        if (unit.owner === 'enemy') {
+           const stats = getEffectiveStats(unit);
+           addLog(`※敵将の情報: ${unit.name} (HP:${unit.hp} / 攻:${stats.effAtk} / 射:${stats.effReach} / 属:${unit.element})`, "sys");
+        } else {
+           activeUnitId = unit.id; 
+           document.getElementById('summon-panel').style.display = 'none';
+           if (!planned[activeUnitId]) planned[activeUnitId] = { move: null, attack: null, possess: false };
+        }
       }
+      break;
 
-      const template = SHIKIGAMI_MASTER.find(m => m.id === selectedSummonTemplate);
-      plannedSummons.push({ templateId: selectedSummonTemplate, x: x, y: y, cost: template.cost });
-      addLog(`【予約】${template.name} の召喚を命じた。`);
-      uiState = 'IDLE'; document.getElementById('summon-panel').style.display = 'none';
-    } else { addLog(`[警告] 召喚は陰陽師の周囲のみ可能です。`, "sys"); }
-    render(); return;
-  }
-  
-  if (unit && uiState !== 'SELECTING_ATTACK') {
-    if (unit.owner === 'enemy') {
-       const stats = getEffectiveStats(unit);
-       addLog(`※敵将の情報: ${unit.name} (HP:${unit.hp} / 攻:${stats.effAtk} / 射:${stats.effReach} / 属:${unit.element})`, "sys");
-    } else {
-       activeUnitId = unit.id; uiState = 'IDLE'; document.getElementById('summon-panel').style.display = 'none';
-       if (!planned[activeUnitId]) planned[activeUnitId] = { move: null, attack: null, possess: false };
-    }
-  } else if (uiState === 'SELECTING_MOVE') {
-    const u = gameData.units.find(u => u.id === activeUnitId);
-    if (Math.abs(u.x - x) <= 1 && Math.abs(u.y - y) <= 1) {
-      planned[activeUnitId].move = { x, y }; planned[activeUnitId].possess = false; uiState = 'IDLE';
+    case 'SELECTING_MOVE':
+      const uMove = gameData.units.find(u => u.id === activeUnitId);
+      if (Math.abs(uMove.x - x) <= 1 && Math.abs(uMove.y - y) <= 1) {
+        planned[activeUnitId].move = { x, y }; 
+        planned[activeUnitId].possess = false; 
+        uiState = 'IDLE';
+        
+        if (planned[activeUnitId].attack) {
+          const ax = planned[activeUnitId].attack.x; const ay = planned[activeUnitId].attack.y;
+          const stats = getEffectiveStats(uMove);
+          if (Math.abs(x - ax) > stats.effReach || Math.abs(y - ay) > stats.effReach) planned[activeUnitId].attack = null;
+        }
+        if (uMove.isLeader && uMove.owner === 'player') {
+          plannedSummons = plannedSummons.filter(s => Math.abs(x - s.x) <= 1 && Math.abs(y - s.y) <= 1);
+        }
+      } else { 
+        addLog(`[警告] 移動は一歩のみです。`, "sys"); 
+      }
+      break;
+
+    case 'SELECTING_ATTACK':
+      const uAtk = gameData.units.find(u => u.id === activeUnitId);
+      const origin = planned[activeUnitId].move || { x: uAtk.x, y: uAtk.y };
+      const stats = getEffectiveStats(uAtk);
+      if (Math.abs(origin.x - x) <= stats.effReach && Math.abs(origin.y - y) <= stats.effReach) {
+        planned[activeUnitId].attack = { x, y }; 
+        planned[activeUnitId].possess = false; 
+        uiState = 'IDLE';
+      } else { 
+        addLog(`[警告] 射程が届きませぬ。`, "sys"); 
+      }
+      break;
+
+    case 'SELECTING_SUMMON_TARGET':
+      const leader = gameData.units.find(u => u.isLeader && u.owner === 'player');
+      const leaderOrigin = planned[leader.id]?.move || { x: leader.x, y: leader.y };
       
-      if (planned[activeUnitId].attack) {
-        const ax = planned[activeUnitId].attack.x; const ay = planned[activeUnitId].attack.y;
-        const stats = getEffectiveStats(u);
-        if (Math.abs(x - ax) > stats.effReach || Math.abs(y - ay) > stats.effReach) planned[activeUnitId].attack = null;
+      if (Math.abs(leaderOrigin.x - x) <= 1 && Math.abs(leaderOrigin.y - y) <= 1) {
+        // ★修正: 移動後の未来の盤面で、そこが空いているかをチェックする
+        const isProjectedOccupied = gameData.units.some(u => {
+          const px = planned[u.id]?.move ? planned[u.id].move.x : u.x;
+          const py = planned[u.id]?.move ? planned[u.id].move.y : u.y;
+          return px === x && py === y && !planned[u.id]?.possess;
+        });
+        const alreadySummoned = plannedSummons.find(s => s.x === x && s.y === y);
+        
+        if (isProjectedOccupied || alreadySummoned) {
+          addLog(`[警告] そのマスは移動後のユニットで埋まるか、既に予約済です。`, "sys");
+          return;
+        }
+
+        const template = SHIKIGAMI_MASTER.find(m => m.id === selectedSummonTemplate);
+        plannedSummons.push({ templateId: selectedSummonTemplate, x: x, y: y, cost: template.cost });
+        addLog(`【予約】${template.name} の召喚を命じた。`);
+        uiState = 'IDLE'; 
+        document.getElementById('summon-panel').style.display = 'none';
+      } else { 
+        addLog(`[警告] 召喚は陰陽師の周囲のみ可能です。`, "sys"); 
       }
-      if (u.isLeader && u.owner === 'player') {
-        plannedSummons = plannedSummons.filter(s => Math.abs(x - s.x) <= 1 && Math.abs(y - s.y) <= 1);
-      }
-    } else { addLog(`[警告] 移動は一歩のみです。`, "sys"); }
-  } else if (uiState === 'SELECTING_ATTACK') {
-    const u = gameData.units.find(u => u.id === activeUnitId);
-    const origin = planned[activeUnitId].move || { x: u.x, y: u.y };
-    const stats = getEffectiveStats(u);
-    if (Math.abs(origin.x - x) <= stats.effReach && Math.abs(origin.y - y) <= stats.effReach) {
-      planned[activeUnitId].attack = { x, y }; planned[activeUnitId].possess = false; uiState = 'IDLE';
-    } else { addLog(`[警告] 射程が届きませぬ。`, "sys"); }
+      break;
   }
   render();
 }
@@ -504,7 +520,7 @@ function resolveTurn() {
   });
   mp.player += turnMpGain.player; mp.enemy += turnMpGain.enemy;
 
-  // ② 憑依解決（属性の継承を追加）
+  // 憑依解決
   gameData.units.forEach(u => {
     if (planned[u.id]?.possess && u.hp > 0) {
       const leader = gameData.units.find(l => l.isLeader && l.owner === u.owner);
@@ -512,7 +528,7 @@ function resolveTurn() {
         const hpBonus = Math.max(1, Math.ceil(u.hp * 0.5));
         const atkBonus = Math.max(1, Math.ceil(u.atk * 0.5));
         leader.hp += hpBonus; leader.atk += atkBonus;
-        leader.element = u.element; // ★NEW: 陰陽師の属性を式神の属性に書き換え
+        leader.element = u.element; 
 
         let tenshoMsg = "";
         if (u.isTensho) {
@@ -530,7 +546,7 @@ function resolveTurn() {
     }
   });
 
-  // ③ 攻撃解決
+  // 攻撃解決
   gameData.units.forEach(u => {
     const atkPlot = planned[u.id]?.attack;
     if (!atkPlot) return;
@@ -557,7 +573,7 @@ function resolveTurn() {
     }
   });
 
-  // ④ 召喚解決
+  // 召喚解決
   plannedSummons.forEach(summon => {
     const isOccupied = gameData.units.find(u => u.x === summon.x && u.y === summon.y);
     const template = SHIKIGAMI_MASTER.find(m => m.id === summon.templateId);
@@ -598,7 +614,7 @@ function resolveTurn() {
     } else if (playerLeaderDead) {
       title = "敗北"; desc = "味方の陰陽師が討ち取られました..."; color = "#d32f2f";
     } else {
-      title = "勝利"; desc = "見事、敵将を討ち取りました！"; color = "#2e7d32";
+      title = "勝利"; desc = "見事、ケガレを祓いました！"; color = "#2e7d32";
     }
     document.getElementById('result-title').innerText = title;
     document.getElementById('result-title').style.color = color;
@@ -648,7 +664,6 @@ function render() {
     if (planned[u.id]?.possess) classes += ' possessing';
     div.className = classes;
     
-    // 陰陽師の属性も憑依で変化するため動的にバッジを生成
     const attrBadge = `<div class="attr-badge attr-${u.element}">${u.element}</div>`;
     const dispAtk = u.isLeader ? getEffectiveStats(u).effAtk : u.atk + u.buffAtk;
     
