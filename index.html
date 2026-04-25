@@ -35,9 +35,11 @@
   #board { display: grid; grid-template-columns: repeat(7, 50px); gap: 2px; background-color: #bfa688; padding: 6px; border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 2px solid #8b7355; }
   .cell { width: 50px; height: 50px; background-color: #fdf5e6; display: flex; justify-content: center; align-items: center; position: relative; cursor: pointer; border-radius: 2px; transition: background-color 0.2s; }
   .cell:hover { background-color: #ffe4c4; }
-  .cell.move-target { background-color: #b3e5fc; box-shadow: inset 0 0 8px rgba(3,169,244,0.3); }
-  .cell.attack-target { background-color: #ffcdd2; box-shadow: inset 0 0 8px rgba(244,67,54,0.3); }
-  .cell.summon-target { background-color: #e1bee7; box-shadow: inset 0 0 8px rgba(156,39,176,0.3); }
+
+  /* ★修正: マスの中のユニットの上から色を被せるオーバーレイ方式に変更 */
+  .cell.move-target::after { content: "移動"; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(3, 169, 244, 0.4); border: 3px solid #03a9f4; box-sizing: border-box; z-index: 20; pointer-events: none; display: flex; justify-content: flex-end; align-items: flex-end; font-size: 10px; font-weight: bold; color: #01579b; padding: 2px; border-radius: 2px; }
+  .cell.attack-target::after { content: "術"; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(244, 67, 54, 0.4); border: 3px solid #f44336; box-sizing: border-box; z-index: 20; pointer-events: none; display: flex; justify-content: flex-end; align-items: flex-end; font-size: 10px; font-weight: bold; color: #b71c1c; padding: 2px; border-radius: 2px; }
+  .cell.summon-target::after { content: "召喚"; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(156, 39, 176, 0.4); border: 3px solid #ab47bc; box-sizing: border-box; z-index: 20; pointer-events: none; display: flex; justify-content: flex-start; align-items: flex-end; font-size: 10px; font-weight: bold; color: #4a148c; padding: 2px; border-radius: 2px; }
 
   .shikigami { width: 44px; height: 44px; border-radius: 4px; display: flex; flex-direction: column; justify-content: space-evenly; align-items: center; font-size: 10px; font-weight: bold; pointer-events: none; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); background-color: #ffffff; color: #222; font-family: 'Hiragino Kaku Gothic Pro', sans-serif; position: relative; transition: all 0.3s; }
   .u-name { font-size: 11px; letter-spacing: 1px; }
@@ -139,7 +141,7 @@
 
 <script>
 // ==========================================
-// 1. マスターデータ
+// マスターデータ
 // ==========================================
 const GAME_CONFIG = {
   MP_REWARD: { move: 1, risk_zone: 1, turn_end: 0 },
@@ -178,7 +180,7 @@ const INITIAL_UNITS = [
 ];
 
 // ==========================================
-// 2. 状態管理・画面遷移
+// 状態管理
 // ==========================================
 let playerDeckIds = [];
 let gameData = { units: [] };
@@ -285,7 +287,7 @@ function getEffectiveStats(unit) {
 }
 
 // ==========================================
-// 4. バトル画面 (UI・クリック処理)
+// バトル画面・クリック処理
 // ==========================================
 const logEl = document.getElementById('log');
 function addLog(msg, type="") { 
@@ -367,7 +369,6 @@ function startSummon(templateId) {
   document.getElementById('unit-info').innerText = `【召喚】${template.name} の配置マスを選択`;
 }
 
-// ★大幅修正: クリックイベントの競合をステートマシンで完全に分離
 function handleCellClick(x, y) {
   const unit = gameData.units.find(u => u.x === x && u.y === y);
 
@@ -423,7 +424,6 @@ function handleCellClick(x, y) {
       const leaderOrigin = planned[leader.id]?.move || { x: leader.x, y: leader.y };
       
       if (Math.abs(leaderOrigin.x - x) <= 1 && Math.abs(leaderOrigin.y - y) <= 1) {
-        // ★修正: 移動後の未来の盤面で、そこが空いているかをチェックする
         const isProjectedOccupied = gameData.units.some(u => {
           const px = planned[u.id]?.move ? planned[u.id].move.x : u.x;
           const py = planned[u.id]?.move ? planned[u.id].move.y : u.y;
