@@ -333,7 +333,6 @@ function getEffectiveStats(unit) {
   return { effAtk, effReach };
 }
 
-// ★NEW: ログ用の名前整形関数（誰が誰を攻撃したかを明確にする）
 function getUnitLogName(unit) {
   return (unit.owner === 'player' ? "味方の" : "敵の") + unit.name;
 }
@@ -540,33 +539,73 @@ function calculateManaGain(unit, prevX, prevY) {
   return gainedMP;
 }
 
+// ★完全版カスケード衝突判定ロジック
 function resolveTurn() {
   addLog("=== ターン一斉解決 ===", "sys");
   gameData.units.forEach(u => { u.buffAtk = 0; });
 
-  const moveDestinations = {};
-  gameData.units.forEach(u => {
-    if (planned[u.id]?.move) {
-      const key = `${planned[u.id].move.x},${planned[u.id].move.y}`;
-      if (!moveDestinations[key]) moveDestinations[key] = [];
-      moveDestinations[key].push(u.id);
-    }
-  });
+  // ① 玉突き対応の衝突判定
+  let collidedUnitIds = new Set();
+  let resolving = true;
+  let loopCount = 0;
 
-  for (const [key, unitIds] of Object.entries(moveDestinations)) {
-    if (unitIds.length > 1) {
-      addLog(`【激突】盤上で衝突発生！移動阻害！`, "atk");
-      unitIds.forEach(id => {
-         const unit = gameData.units.find(u => u.id === id);
-         if(unit) { 
-           unit.hp -= GAME_CONFIG.DAMAGE.collision; 
-           addLog(` ＞ ${getUnitLogName(unit)} に${GAME_CONFIG.DAMAGE.collision}の痛手!`, "atk");
-           planned[id].move = null; 
-         }
-      });
+  while (resolving && loopCount < 10) {
+    resolving = false;
+    let projected = {};
+    
+    // 現在の予測位置をマッピング
+    gameData.units.forEach(u => {
+      const px = planned[u.id]?.move ? planned[u.id].move.x : u.x;
+      const py = planned[u.id]?.move ? planned[u.id].move.y : u.y;
+      const key = `${px},${py}`;
+      if (!projected[key]) projected[key] = [];
+      projected[key].push(u.id);
+    });
+
+    // 1マスに2体以上集まる「同じマスへの衝突」
+    for (const [key, unitIds] of Object.entries(projected)) {
+      if (unitIds.length > 1) {
+        unitIds.forEach(id => {
+          if (planned[id]?.move) {
+            planned[id].move = null; 
+            resolving = true; 
+          }
+          collidedUnitIds.add(id);
+        });
+      }
     }
+
+    // 「すれ違い」の衝突
+    gameData.units.forEach(u1 => {
+      if (planned[u1.id]?.move) {
+        const destX = planned[u1.id].move.x;
+        const destY = planned[u1.id].move.y;
+        const u2 = gameData.units.find(u => u.x === destX && u.y === destY);
+        if (u2 && planned[u2.id]?.move && planned[u2.id].move.x === u1.x && planned[u2.id].move.y === u1.y) {
+          planned[u1.id].move = null;
+          planned[u2.id].move = null;
+          collidedUnitIds.add(u1.id);
+          collidedUnitIds.add(u2.id);
+          resolving = true;
+        }
+      }
+    });
+    loopCount++;
   }
 
+  // 衝突ダメージ
+  if (collidedUnitIds.size > 0) {
+    addLog(`【激突】盤上で衝突発生！移動阻害！`, "atk");
+    collidedUnitIds.forEach(id => {
+      const unit = gameData.units.find(u => u.id === id);
+      if (unit) {
+        unit.hp -= GAME_CONFIG.DAMAGE.collision;
+        addLog(` ＞ ${getUnitLogName(unit)} に${GAME_CONFIG.DAMAGE.collision}の痛手!`, "atk");
+      }
+    });
+  }
+
+  // 呪力獲得と最終移動の確定
   let turnMpGain = { player: GAME_CONFIG.MP_REWARD.turn_end, enemy: GAME_CONFIG.MP_REWARD.turn_end };
   gameData.units.forEach(u => {
     const prevX = u.x; const prevY = u.y;
@@ -576,7 +615,7 @@ function resolveTurn() {
   });
   mp.player += turnMpGain.player; mp.enemy += turnMpGain.enemy;
 
-  // 憑依解決
+  // ② 憑依解決
   gameData.units.forEach(u => {
     if (planned[u.id]?.possess && u.hp > 0) {
       const leader = gameData.units.find(l => l.isLeader && l.owner === u.owner);
@@ -602,7 +641,7 @@ function resolveTurn() {
     }
   });
 
-  // 攻撃解決
+  // ③ 攻撃解決
   gameData.units.forEach(u => {
     const atkPlot = planned[u.id]?.attack;
     if (!atkPlot) return;
@@ -617,12 +656,10 @@ function resolveTurn() {
           dmg = Math.floor(dmg * GAME_CONFIG.DAMAGE.resist_multiplier); msg = "(軽減...)";
         }
         target.hp -= dmg;
-        // ★修正: 攻撃時のログで「味方の」「敵の」を明記する
         addLog(`【攻撃】${getUnitLogName(u)} → ${getUnitLogName(target)}に ${dmg}ダメージ ${msg}`, "atk");
       } else {
         if (ELEMENT_BOOST[u.element] === target.element) {
           target.buffAtk += GAME_CONFIG.BUFF.atk_boost;
-          // ★修正: 支援時も明記
           addLog(`【支援】${getUnitLogName(u)} → ${getUnitLogName(target)}に相生の気！(次ターン攻+${GAME_CONFIG.BUFF.atk_boost})`, "heal");
         }
       }
@@ -631,7 +668,7 @@ function resolveTurn() {
     }
   });
 
-  // 召喚解決
+  // ④ 召喚解決
   plannedSummons.forEach(summon => {
     const isOccupied = gameData.units.find(u => u.x === summon.x && u.y === summon.y);
     const template = SHIKIGAMI_MASTER.find(m => m.id === summon.templateId);
@@ -663,7 +700,11 @@ function resolveTurn() {
     return true;
   });
 
-  planned = {}; activeUnitId = null; uiState = 'IDLE'; render();
+  // ⑤ 状態のリセット
+  planned = {}; 
+  activeUnitId = null; 
+  uiState = 'IDLE'; 
+  render();
 
   if (playerLeaderDead || enemyLeaderDead) {
     let title = ""; let desc = ""; let color = "";
