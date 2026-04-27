@@ -19,7 +19,6 @@
   .big-btn:hover { transform: translateY(2px); box-shadow: 0 2px 0 #b71c1c; }
   .big-btn:disabled { background: #ccc; box-shadow: 0 4px 0 #999; cursor: not-allowed; }
 
-  /* ★NEW: ルール説明画面のスタイル */
   .rules-content { width: 100%; max-height: 420px; overflow-y: auto; background: #fff8e1; border: 1px solid #e0d5c1; border-radius: 8px; padding: 15px; box-sizing: border-box; text-align: left; font-size: 13px; line-height: 1.6; color: #444; box-shadow: inset 0 2px 5px rgba(0,0,0,0.05); }
   .rules-content h3 { color: #b71c1c; font-size: 16px; margin-top: 15px; margin-bottom: 5px; border-bottom: 1px dashed #d32f2f; padding-bottom: 3px; }
   .rules-content h3:first-child { margin-top: 0; }
@@ -117,26 +116,22 @@
         <li>相手の移動先を読み、攻撃を置く（置き技）などの戦略が求められます。</li>
         <li>移動先が重なった場合は<strong>激突</strong>となり、互いにダメージを受け移動がキャンセルされます。</li>
       </ul>
-
       <h3>❖ 勝利条件と敗北</h3>
       <ul>
         <li>盤面の奥にいる敵将（ケガレ）のHPを0にすれば<strong>勝利</strong>。</li>
         <li>味方の陰陽師（黄枠の【将】）のHPが0になると敗北です。</li>
       </ul>
-
       <h3>❖ 呪力（マナ）と召喚</h3>
       <ul>
         <li>呪力は<strong>「移動（+1）」</strong>や<strong>「敵に接近（+1）」</strong>などの積極的な行動で貯まります。</li>
         <li>呪力を消費し、陰陽師の周囲に手札の式神を<strong>召喚</strong>できます。</li>
       </ul>
-
       <h3>❖ 五行相克・相生（属性）</h3>
       <ul>
         <li><span class="attr-text" style="background:#4caf50;">木</span><span class="attr-text" style="background:#f44336;">火</span><span class="attr-text" style="background:#8d6e63;">土</span><span class="attr-text" style="background:#ffb300;color:#000;">金</span><span class="attr-text" style="background:#2196f3;">水</span> の5属性があります。</li>
         <li><strong>【相克】弱点を突く:</strong> 有利な属性の敵に術を放つとダメージが<strong>1.5倍</strong>になります。</li>
         <li><strong>【相生】味方を支援:</strong> 相性の良い味方（例: 木が火へ）に術を放つと、次ターン対象の<strong>攻撃力が+3</strong>されます。※敵の相生属性を攻撃してしまうとダメージが半減します。</li>
       </ul>
-
       <h3>❖ 憑依（ひょうい）システム</h3>
       <ul>
         <li>味方の式神を陰陽師に<strong>憑依</strong>させると、その式神は消滅する代わりに、陰陽師の「HPと攻撃力（50%分）」が永続アップし、属性も上書きされます。</li>
@@ -193,7 +188,7 @@
 
 <script>
 // ==========================================
-// 1. マスターデータ
+// マスターデータ
 // ==========================================
 const GAME_CONFIG = {
   MP_REWARD: { move: 1, risk_zone: 1, turn_end: 0 },
@@ -232,7 +227,7 @@ const INITIAL_UNITS = [
 ];
 
 // ==========================================
-// 2. 状態管理・画面遷移
+// 状態管理
 // ==========================================
 let playerDeckIds = [];
 let gameData = { units: [] };
@@ -338,8 +333,13 @@ function getEffectiveStats(unit) {
   return { effAtk, effReach };
 }
 
+// ★NEW: ログ用の名前整形関数（誰が誰を攻撃したかを明確にする）
+function getUnitLogName(unit) {
+  return (unit.owner === 'player' ? "味方の" : "敵の") + unit.name;
+}
+
 // ==========================================
-// 4. バトル画面 (UI・クリック処理)
+// バトル画面・クリック処理
 // ==========================================
 const logEl = document.getElementById('log');
 function addLog(msg, type="") { 
@@ -560,7 +560,7 @@ function resolveTurn() {
          const unit = gameData.units.find(u => u.id === id);
          if(unit) { 
            unit.hp -= GAME_CONFIG.DAMAGE.collision; 
-           addLog(` ＞ ${unit.name} に${GAME_CONFIG.DAMAGE.collision}の痛手!`, "atk");
+           addLog(` ＞ ${getUnitLogName(unit)} に${GAME_CONFIG.DAMAGE.collision}の痛手!`, "atk");
            planned[id].move = null; 
          }
       });
@@ -596,7 +596,7 @@ function resolveTurn() {
           else if (u.tenshoAbility === 'kijin') { leader.atk += 3; leader.hp += 5; tenshoMsg = " 【貴人の加護: 攻+3/HP+5】"; }
         }
 
-        addLog(`【憑依】${u.name} が陰陽師と一体化した！ (HP+${hpBonus} / 攻+${atkBonus} / 属性:${u.element})${tenshoMsg}`, "possess");
+        addLog(`【憑依】${getUnitLogName(u)} が陰陽師と一体化した！ (HP+${hpBonus} / 攻+${atkBonus} / 属性:${u.element})${tenshoMsg}`, "possess");
         u.hp = 0; 
       }
     }
@@ -617,15 +617,17 @@ function resolveTurn() {
           dmg = Math.floor(dmg * GAME_CONFIG.DAMAGE.resist_multiplier); msg = "(軽減...)";
         }
         target.hp -= dmg;
-        addLog(`【攻撃】${u.name} → 敵の${target.name}に ${dmg}ダメージ ${msg}`, "atk");
+        // ★修正: 攻撃時のログで「味方の」「敵の」を明記する
+        addLog(`【攻撃】${getUnitLogName(u)} → ${getUnitLogName(target)}に ${dmg}ダメージ ${msg}`, "atk");
       } else {
         if (ELEMENT_BOOST[u.element] === target.element) {
           target.buffAtk += GAME_CONFIG.BUFF.atk_boost;
-          addLog(`【支援】${u.name} → 味方の${target.name}に相生の気！(次ターン攻+${GAME_CONFIG.BUFF.atk_boost})`, "heal");
+          // ★修正: 支援時も明記
+          addLog(`【支援】${getUnitLogName(u)} → ${getUnitLogName(target)}に相生の気！(次ターン攻+${GAME_CONFIG.BUFF.atk_boost})`, "heal");
         }
       }
     } else if (u.hp > 0 && !planned[u.id]?.possess) { 
-      addLog(`【空振り】${u.name}の術は空を切った...`); 
+      addLog(`【空振り】${getUnitLogName(u)}の術は空を切った...`); 
     }
   });
 
@@ -643,7 +645,7 @@ function resolveTurn() {
         isTensho: template.isTensho, tenshoAbility: template.tenshoAbility,
         x: summon.x, y: summon.y
       });
-      addLog(`【召喚】${template.name} が戦場に顕現した！`, "heal");
+      addLog(`【召喚】味方の${template.name} が戦場に顕現した！`, "heal");
     }
   });
   plannedSummons = [];
@@ -651,7 +653,7 @@ function resolveTurn() {
   let playerLeaderDead = false; let enemyLeaderDead = false;
   gameData.units = gameData.units.filter(u => {
     if (u.hp <= 0) {
-      if (!planned[u.id]?.possess) addLog(`【撃破】${u.name} が倒れた！`, "atk");
+      if (!planned[u.id]?.possess) addLog(`【撃破】${getUnitLogName(u)} が倒れた！`, "atk");
       if (u.isLeader) {
         if (u.owner === 'player') playerLeaderDead = true;
         if (u.owner === 'enemy') enemyLeaderDead = true;
