@@ -3,219 +3,177 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>超かぐや姫伝 - 月面防衛線 -</title>
+<title>陰陽盤上戦記</title>
 <style>
-  /* ==========================================
-     超かぐや姫！ドット絵テーマ・ベーススタイル
-  ========================================== */
-  @font-face {
-    font-family: 'PixelMplus';
-    src: url('https://raw.githubusercontent.com/itouhiro/pixelmplus/master/fonts/PixelMplus12-Regular.ttf') format('truetype');
-  }
-
-  body { 
-    /* ドット絵風のフォント設定 */
-    font-family: 'PixelMplus', 'Courier New', 'Hiragino Kaku Gothic ProN', monospace;
-    -webkit-font-smoothing: none; /* ドット絵をクッキリさせる */
-    image-rendering: pixelated; /* ドット絵をクッキリさせる */
-    user-select: none; 
-    
-    /* 背景：ドット絵で描かれた竹林と月面 */
-    background-color: #000000; 
-    background-image: 
-      /* ドット絵の竹林 */
-      url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAAXNSR0IArs4c6QAAADFJREFUGFdjYEACv9f+ZWBgYGARZGBgwCkgAARuBmwC7EwMDGwMqAQUmBkY8AnACwByLQQEtC5gOAAAAABJRU5ErkJggg=='), /* 竹の節 */
-      linear-gradient(#0a0a20 50%, #000000 50%);
-    background-size: 8px 8px, 100% 100%;
-    color: #e0f7fa; 
-    margin: 0; padding: 20px; 
-    display: flex; justify-content: center; align-items: center; min-height: 100vh; 
-  }
+  body { font-family: 'Hiragino Mincho ProN', 'Noto Serif JP', 'Yu Mincho', serif; user-select: none; background-color: #f9f6f0; background-image: url('data:image/svg+xml;utf8,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100" height="100" filter="url(%23noise)" opacity="0.05"/></svg>'); color: #333333; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
   
-  #app-container { 
-    position: relative; 
-    /* ドット絵世界の石板風背景 */
-    background: #000; 
-    padding: 20px 30px; 
-    border-radius: 4px; /* レトロなので角は鋭く */
-    /* ドット絵風の太めの枠線 */
-    border: 4px solid #fff; 
-    outline: 4px solid #00e5ff; /* 光る枠 */
-    width: 440px; display: flex; flex-direction: column; 
-    align-items: center; min-height: 600px;
-    box-shadow: 0 0 0 8px #000; /* さらに外側の黒枠 */
-  }
+  #app-container { position: relative; background: #ffffff; padding: 20px 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border: 1px solid #e0d5c1; width: 440px; display: flex; flex-direction: column; align-items: center; min-height: 600px;}
   
   .screen { display: none; flex-direction: column; align-items: center; width: 100%; height: 100%; }
   .screen.active { display: flex; }
   
-  h1 { font-size: 28px; color: #fff; margin-bottom: 20px; letter-spacing: 2px; text-shadow: 4px 4px #00e5ff, -4px -4px #ff1744; text-align: center; font-weight: normal;}
-  h2 { color: #fff; margin-top: 0; margin-bottom: 15px; letter-spacing: 2px; border-bottom: 2px solid #00e5ff; padding-bottom: 5px; font-size: 16px; font-weight: normal; text-shadow: 2px 2px #000;}
+  h1 { font-size: 36px; color: #5c4b37; margin-bottom: 40px; letter-spacing: 4px; text-shadow: 2px 2px 4px rgba(0,0,0,0.1); border-bottom: 2px solid #5c4b37; padding-bottom: 10px;}
+  h2 { color: #5c4b37; margin-top: 0; margin-bottom: 15px; letter-spacing: 2px; border-bottom: 2px solid #5c4b37; padding-bottom: 5px; font-size: 20px;}
   
-  .subtitle { color: #b2ebf2; font-size: 11px; margin-bottom: 30px; text-align: center; line-height: 1.6; text-shadow: 1px 1px #000;}
+  .big-btn { background: #d32f2f; color: white; font-size: 20px; padding: 15px 40px; border-radius: 40px; box-shadow: 0 4px 0 #b71c1c; border: none; cursor: pointer; transition: 0.2s; font-family: inherit; font-weight: bold; letter-spacing: 2px;}
+  .big-btn:hover { transform: translateY(2px); box-shadow: 0 2px 0 #b71c1c; }
+  .big-btn:disabled { background: #ccc; box-shadow: 0 4px 0 #999; cursor: not-allowed; }
 
-  /* ドット絵ボタン */
-  .big-btn { 
-    background: #000; 
-    color: #fff; 
-    font-size: 16px; 
-    padding: 10px 20px; 
-    border-radius: 2px; 
-    border: 2px solid #fff; 
-    box-shadow: 4px 4px #00e5ff; 
-    cursor: pointer; 
-    transition: 0.1s; 
-    font-family: inherit; 
-    font-weight: normal; 
-    letter-spacing: 1px; 
-    text-transform: uppercase;
-    position: relative;
-    top: 0; left: 0;
-  }
-  .big-btn:hover { top: 2px; left: 2px; box-shadow: 2px 2px #00e5ff; }
-  .big-btn:active { top: 4px; left: 4px; box-shadow: 0px 0px #00e5ff; }
-  .big-btn:disabled { border-color: #555; color: #555; box-shadow: 4px 4px #000; cursor: not-allowed; }
+  .rules-content { width: 100%; max-height: 420px; overflow-y: auto; background: #fff8e1; border: 1px solid #e0d5c1; border-radius: 8px; padding: 15px; box-sizing: border-box; text-align: left; font-size: 13px; line-height: 1.6; color: #444; box-shadow: inset 0 2px 5px rgba(0,0,0,0.05); }
+  .rules-content h3 { color: #b71c1c; font-size: 16px; margin-top: 15px; margin-bottom: 5px; border-bottom: 1px dashed #d32f2f; padding-bottom: 3px; }
+  .rules-content h3:first-child { margin-top: 0; }
+  .rules-content ul { padding-left: 20px; margin-top: 5px; margin-bottom: 10px; }
+  .rules-content li { margin-bottom: 6px; }
+  .rules-content strong { color: #d32f2f; }
+  .rules-content .attr-text { display: inline-block; padding: 2px 6px; border-radius: 4px; color: white; font-weight: bold; font-size: 11px; margin: 0 2px;}
 
-  /* ==========================================
-     デッキ編成 (月の仲間募集)
-  ========================================== */
   #deck-list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 15px; max-height: 380px; overflow-y: auto; padding: 5px;}
-  .deck-card { width: 120px; border: 2px solid #fff; border-radius: 2px; padding: 8px; cursor: pointer; text-align: center; background: #000; transition: 0.1s; position: relative; color: #b2ebf2;}
-  .deck-card:hover { border-color: #00e5ff; }
-  .deck-card.selected { border-color: #ffea00; transform: scale(1.05); box-shadow: 0 0 0 2px #000, 0 0 10px #ffea00; }
-  .deck-card.disabled { opacity: 0.4; filter: grayscale(100%); cursor: not-allowed; }
-  .dc-name { font-weight: normal; font-size: 12px; margin-bottom: 4px; color: #fff;}
-  .dc-type { font-size: 9px; color: #00e5ff; margin-bottom: 4px; }
-  .dc-type.tensho { color: #ffea00; font-weight: normal; text-shadow: 1px 1px #000;}
-  .dc-stats { font-size: 9px; margin-bottom: 4px; }
-  .dc-cost { font-size: 9px; font-weight: normal; color: #fff; background: #9c27b0; border: 1px solid #fff; border-radius: 2px; display: inline-block; padding: 1px 4px;}
+  .deck-card { width: 120px; border: 2px solid #e0d5c1; border-radius: 6px; padding: 8px; cursor: pointer; text-align: center; background: #fff; transition: 0.2s; position: relative;}
+  .deck-card:hover { border-color: #ff9800; background: #fff8e1; }
+  .deck-card.selected { border-color: #f57c00; background: #ffe0b2; transform: scale(1.05); box-shadow: 0 2px 8px rgba(245,124,0,0.4); }
+  .deck-card.disabled { opacity: 0.5; filter: grayscale(80%); cursor: not-allowed; }
+  .dc-name { font-weight: bold; font-size: 14px; margin-bottom: 4px; }
+  .dc-type { font-size: 10px; color: #666; margin-bottom: 4px; }
+  .dc-type.tensho { color: #d32f2f; font-weight: bold; }
+  .dc-stats { font-size: 11px; margin-bottom: 4px; }
+  .dc-cost { font-size: 11px; font-weight: bold; color: #6a1b9a; background: #f3e5f5; border-radius: 10px; display: inline-block; padding: 2px 6px;}
 
-  #deck-warning { color: #ff1744; font-size: 11px; font-weight: normal; min-height: 18px; margin-bottom: 10px; text-shadow: 1px 1px #000;}
+  #deck-warning { color: #d32f2f; font-size: 12px; font-weight: bold; min-height: 18px; margin-bottom: 10px; }
 
-  /* ==========================================
-     バトル画面 (月の盤面)
-  ========================================== */
-  #board { display: grid; grid-template-columns: repeat(7, 50px); gap: 2px; background-color: #000; padding: 6px; border-radius: 2px; border: 2px solid #fff; }
-  .cell { width: 50px; height: 50px; background-color: #0a0a20; border: 1px solid #1a1a40; display: flex; justify-content: center; align-items: center; position: relative; cursor: pointer; }
-  .cell:hover { background-color: #1a1a40; border-color: #fff; }
+  #board { display: grid; grid-template-columns: repeat(7, 50px); gap: 2px; background-color: #bfa688; padding: 6px; border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 2px solid #8b7355; }
+  .cell { width: 50px; height: 50px; background-color: #fdf5e6; display: flex; justify-content: center; align-items: center; position: relative; cursor: pointer; border-radius: 2px; transition: background-color 0.2s; }
+  .cell:hover { background-color: #ffe4c4; }
 
-  /* ターゲット予約 (日本語ドット絵) */
-  .cell.move-target::after { content: "イドウ"; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 229, 255, 0.2); border: 2px solid #00e5ff; box-sizing: border-box; z-index: 20; pointer-events: none; display: flex; justify-content: center; align-items: center; font-size: 9px; font-weight: normal; color: #fff; text-shadow: 1px 1px #000;}
-  .cell.attack-target::after { content: "ジュツ"; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 23, 68, 0.2); border: 2px solid #ff1744; box-sizing: border-box; z-index: 20; pointer-events: none; display: flex; justify-content: center; align-items: center; font-size: 9px; font-weight: normal; color: #fff; text-shadow: 1px 1px #000;}
-  .cell.summon-target::after { content: "ショウカン"; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(156, 39, 176, 0.2); border: 2px solid #9c27b0; box-sizing: border-box; z-index: 20; pointer-events: none; display: flex; justify-content: center; align-items: center; font-size: 8px; font-weight: normal; color: #fff; text-shadow: 1px 1px #000;}
+  .cell.move-target::after { content: "移動"; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(3, 169, 244, 0.4); border: 3px solid #03a9f4; box-sizing: border-box; z-index: 20; pointer-events: none; display: flex; justify-content: flex-end; align-items: flex-end; font-size: 10px; font-weight: bold; color: #01579b; padding: 2px; border-radius: 2px; }
+  .cell.attack-target::after { content: "術"; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(244, 67, 54, 0.4); border: 3px solid #f44336; box-sizing: border-box; z-index: 20; pointer-events: none; display: flex; justify-content: flex-end; align-items: flex-end; font-size: 10px; font-weight: bold; color: #b71c1c; padding: 2px; border-radius: 2px; }
+  .cell.summon-target::after { content: "召喚"; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(156, 39, 176, 0.4); border: 3px solid #ab47bc; box-sizing: border-box; z-index: 20; pointer-events: none; display: flex; justify-content: flex-start; align-items: flex-end; font-size: 10px; font-weight: bold; color: #4a148c; padding: 2px; border-radius: 2px; }
 
-  /* ユニット (ドット絵キャラクター画像風) */
-  .shikigami { width: 44px; height: 44px; display: flex; flex-direction: column; justify-content: space-evenly; align-items: center; font-size: 9px; pointer-events: none; z-index: 10; background-color: #000; position: relative; transition: all 0.2s; border-radius: 2px; }
-  .u-name { font-size: 8px; letter-spacing: 0px; }
-  .u-stats { font-size: 8px; display: flex; gap: 1px; }
+  .shikigami { width: 44px; height: 44px; border-radius: 4px; display: flex; flex-direction: column; justify-content: space-evenly; align-items: center; font-size: 10px; font-weight: bold; pointer-events: none; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); background-color: #ffffff; color: #222; font-family: 'Hiragino Kaku Gothic Pro', sans-serif; position: relative; transition: all 0.3s; }
+  .u-name { font-size: 11px; letter-spacing: 1px; }
+  .u-stats { font-size: 9px; display: flex; gap: 2px; }
 
-  /* プレイヤー=姫軍(青枠), エネミー=闇軍(赤枠) */
-  .player { border: 2px solid #00e5ff; color: #fff;}
-  .enemy { border: 2px solid #ff1744; color: #fff;}
-  
-  .leader { border-width: 2px; border-style: double; }
-  .leader.player { border-color: #fff; box-shadow: 0 0 10px #00e5ff; }
-  .leader.enemy { border-color: #fff; box-shadow: 0 0 10px #ff1744; }
-  .leader::before { content: "将"; position: absolute; top: -6px; left: -2px; background: #000; border: 1px solid currentColor; font-size: 7px; padding: 0 1px; z-index: 12;}
-  .leader.player::before { color: #00e5ff; }
-  .leader.enemy::before { color: #ff1744; }
+  .player { border: 2px solid #d32f2f; border-bottom-width: 4px; }
+  .enemy { border: 2px solid #1976d2; border-bottom-width: 4px; }
+  .leader { border-color: #f57f17; }
+  .leader::before { content: "将"; position: absolute; top: -8px; left: -8px; background: #f57f17; color: #fff; font-size: 10px; width: 18px; height: 18px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-family: 'Hiragino Mincho ProN', serif; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
 
-  /* 属性タグ */
-  .attr-badge { position: absolute; top: -6px; right: -4px; font-size: 7px; color: #fff; padding: 0 2px; border-radius: 1px; border: 1px solid #fff;}
-  .attr-木 { background-color: #4caf50; } .attr-火 { background-color: #f44336; } .attr-土 { background-color: #8d6e63; } .attr-金 { background-color: #ffb300; } .attr-水 { background-color: #2196f3; } .attr-無 { background-color: #9e9e9e; }
+  .attr-badge { position: absolute; top: -6px; right: -6px; width: 16px; height: 16px; border-radius: 50%; font-size: 10px; color: white; display: flex; justify-content: center; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.3); font-family: 'Hiragino Kaku Gothic Pro', sans-serif; transition: background-color 0.3s;}
+  .attr-木 { background-color: #4caf50; } .attr-火 { background-color: #f44336; } .attr-土 { background-color: #8d6e63; } .attr-金 { background-color: #ffb300; color: #333; } .attr-水 { background-color: #2196f3; } .attr-無 { background-color: #9e9e9e; }
 
-  .selected { outline: 2px solid #fff; outline-offset: 2px; transform: scale(1.1); z-index: 15;}
-  .buffed { border-color: #ffea00; box-shadow: 0 0 10px #ffea00; }
-  .possessing { animation: glitch 0.3s infinite alternate; }
-  @keyframes glitch { 0% { filter: hue-rotate(0deg) saturate(1); } 100% { filter: hue-rotate(180deg) saturate(2); } }
+  .selected { outline: 3px solid #ff9800; outline-offset: 2px; transform: scale(1.05); }
+  .buffed { box-shadow: 0 0 10px #ffb300; border-color: #ffb300; }
+  .possessing { animation: float 1s infinite alternate; filter: drop-shadow(0 0 5px #00bcd4); opacity: 0.8;}
+  @keyframes float { 0% { transform: translateY(0px); } 100% { transform: translateY(-4px); } }
 
-  /* UIパネル */
   #ui-panel { margin-top: 15px; text-align: center; width: 380px; }
-  .resource-bar { display: flex; justify-content: space-between; font-weight: normal; padding: 6px 15px; background: #000; border: 2px solid #fff; border-radius: 2px; margin-bottom: 10px; font-size: 11px; }
-  .mp-player { color: #00e5ff; } 
-  .mp-enemy { color: #ff1744; }
-
-  #unit-info { font-size: 10px; color: #fff; margin-bottom: 10px; background: #000; padding: 6px; border: 2px solid #fff; border-left: 6px solid #fff;}
+  .resource-bar { display: flex; justify-content: space-between; font-weight: bold; padding: 6px 15px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 10px; font-size: 14px; }
+  .mp-player { color: #d32f2f; } .mp-enemy { color: #1976d2; }
+  #unit-info { font-size: 13px; color: #5c4b37; margin-bottom: 10px; background: #fff8e1; padding: 6px; border-radius: 4px; border: 1px solid #ffe082; font-weight: bold; }
 
   .btn-group { display: flex; gap: 6px; justify-content: center; margin: 10px 0; flex-wrap: wrap; }
-  button.mode-btn { padding: 5px 10px; cursor: pointer; border: 2px solid #fff; border-radius: 2px; font-weight: normal; font-size: 10px; transition: all 0.1s; font-family: inherit; color: #fff; background: #000; }
-  button.mode-btn:hover { background: #00e5ff; color: #000; }
-  button.mode-btn.active { background: #fff; color: #000; box-shadow: 0 0 10px #fff; }
+  button.mode-btn { padding: 6px 10px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; font-size: 12px; transition: all 0.2s; font-family: inherit; color: #333; background: #e0e0e0; box-shadow: 0 3px 0 #bdbdbd; }
+  button.mode-btn:active { transform: translateY(3px); box-shadow: none; }
+  .mode-btn:hover { background: #d5d5d5; }
+  .mode-btn.active { background: #5c4b37; color: #fff; box-shadow: 0 3px 0 #3e3224; }
   
-  #btn-summon { border-color: #9c27b0; color: #e1bee7; }
-  #btn-summon:hover, #btn-summon.active { background: #9c27b0; color: #fff; }
+  #btn-summon { background: #e1bee7; color: #6a1b9a; border: 1px solid #ab47bc; box-shadow: 0 3px 0 #ab47bc;}
+  #btn-possess { background: #b2ebf2; color: #00838f; border: 1px solid #00bcd4; box-shadow: 0 3px 0 #00bcd4;}
+  #btn-cancel { background: #ffe0b2; color: #e65100; border: 1px solid #ff9800; box-shadow: 0 3px 0 #ff9800;}
   
-  #btn-possess { border-color: #ffea00; color: #ffea00; }
-  #btn-possess:hover, #btn-possess.active { background: #ffea00; color: #000; }
+  #execute-btn { background: #4caf50; color: white; width: 100%; font-size: 16px; margin-top: 5px; padding: 12px; box-shadow: 0 4px 0 #388e3c; letter-spacing: 2px; border: none; border-radius: 6px; font-family: inherit; font-weight: bold; cursor: pointer;}
+  #execute-btn:hover { filter: brightness(1.05); }
   
-  #btn-cancel { border-color: #555; color: #aaa; }
-  #btn-cancel:hover { background: #555; color: #fff; }
-  
-  #execute-btn { background: #000; color: #fff; width: 100%; font-size: 14px; margin-top: 5px; padding: 10px; border: 2px solid #fff; box-shadow: 4px 4px #4caf50; font-family: inherit; font-weight: normal; cursor: pointer; letter-spacing: 2px;}
-  #execute-btn:hover { background: #4caf50; color: #000; box-shadow: 2px 2px #fff; }
-  
-  #summon-panel { background: #000; border: 2px dashed #9c27b0; padding: 6px; margin-bottom: 10px; display: none; flex-wrap: wrap; justify-content: center; gap: 4px;}
-  .summon-btn { background: #000; color: #e1bee7; font-size: 9px; padding: 3px 6px; border: 1px solid #9c27b0; cursor: pointer;}
-  .summon-btn:hover { background: #9c27b0; color: #fff; }
+  #summon-panel { background: #f3e5f5; border: 1px solid #ab47bc; padding: 8px; border-radius: 6px; margin-bottom: 10px; display: none; flex-wrap: wrap; justify-content: center; gap: 4px;}
+  .summon-btn { background: #ab47bc; color: white; font-size: 11px; padding: 4px 8px; border: none; border-radius: 4px; box-shadow: 0 2px 0 #7b1fa2; cursor: pointer;}
+  .summon-btn:active { transform: translateY(2px); box-shadow: none; }
 
-  /* レトロRPG風テキストログ */
-  #log { background: #000; color: #fff; padding: 8px; width: 360px; height: 90px; overflow-y: auto; font-size: 9px; margin-top: 10px; border: 2px solid #fff; text-align: left; line-height: 1.5; border-left: 5px solid #fff; }
-  .log-atk { color: #ff8a80; } .log-heal { color: #81d4fa; } .log-sys { color: #ffff8d; } .log-possess { color: #ea80fc; }
+  #log { background: #fafafa; color: #333; padding: 10px; width: 360px; height: 110px; overflow-y: auto; font-size: 12px; margin-top: 10px; border-radius: 6px; text-align: left; line-height: 1.5; border: 1px solid #ccc; font-family: 'Hiragino Kaku Gothic Pro', sans-serif; }
+  .log-atk { color: #d32f2f; font-weight: bold; } .log-heal { color: #1976d2; font-weight: bold; } .log-sys { color: #e65100; } .log-possess { color: #00838f; font-weight: bold; }
 
-  /* 結果オーバーレイ (ドット絵ゲーム風) */
-  #result-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 100; flex-direction: column; justify-content: center; align-items: center; text-align: center; border: 4px solid #fff; outline: 4px solid #00e5ff; }
-  #result-title { font-size: 32px; color: #fff; margin-bottom: 10px; text-shadow: 4px 4px #000; letter-spacing: 3px; font-weight: normal;}
-  #result-desc { font-size: 12px; color: #b2ebf2; margin-bottom: 40px; }
+  #result-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); border-radius: 12px; z-index: 100; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+  #result-title { font-size: 48px; color: #333; margin-bottom: 10px; font-family: 'Hiragino Mincho ProN', serif; }
+  #result-desc { font-size: 18px; color: #666; margin-bottom: 40px; letter-spacing: 1px;}
 </style>
 </head>
 <body>
 <div id="app-container">
 
   <div id="screen-title" class="screen active">
-    <h1>超かぐや姫伝</h1>
-    <div class="subtitle">
-      月の光を闇が切り裂くとき、<br>
-      伝説の姫が、今、目覚める...<br>
-      月面データベース『竹取の記憶』を守り抜け！
-    </div>
-    <div style="display: flex; gap: 15px; flex-direction: column; width: 70%;">
-      <button class="big-btn" onclick="showScreen('screen-deck')">モノガタリ ヲ ハジメル</button>
+    <h1>陰陽盤上戦記</h1>
+    <p style="margin-bottom: 40px; color:#666;">〜 同時プロット・タクティクス 〜</p>
+    <div style="display: flex; gap: 15px; flex-direction: column; width: 60%;">
+      <button class="big-btn" onclick="showScreen('screen-deck')">はじめる</button>
+      <button class="big-btn" style="background:#5c4b37; box-shadow: 0 4px 0 #3e3224; font-size:16px; padding:12px;" onclick="showScreen('screen-rules')">戦の理（ルール）</button>
     </div>
   </div>
 
+  <div id="screen-rules" class="screen">
+    <h2>戦の理（ルール説明）</h2>
+    <div class="rules-content">
+      <h3>❖ 基本規則（同時プロット）</h3>
+      <ul>
+        <li>互いの行動を<strong>「同時に予約」</strong>し、ターン確定時に一斉に解決される心理戦です。</li>
+        <li>相手の移動先を読み、攻撃を置く（置き技）などの戦略が求められます。</li>
+        <li>移動先が重なった場合は<strong>激突</strong>となり、互いにダメージを受け移動がキャンセルされます。</li>
+      </ul>
+      <h3>❖ 勝利条件と敗北</h3>
+      <ul>
+        <li>盤面の奥にいる敵将（ケガレ）のHPを0にすれば<strong>勝利</strong>。</li>
+        <li>味方の陰陽師（黄枠の【将】）のHPが0になると敗北です。</li>
+      </ul>
+      <h3>❖ 呪力（マナ）と召喚</h3>
+      <ul>
+        <li>呪力は<strong>「移動（+1）」</strong>や<strong>「敵に接近（+1）」</strong>などの積極的な行動で貯まります。</li>
+        <li>呪力を消費し、陰陽師の周囲に手札の式神を<strong>召喚</strong>できます。</li>
+      </ul>
+      <h3>❖ 五行相克・相生（属性）</h3>
+      <ul>
+        <li><span class="attr-text" style="background:#4caf50;">木</span><span class="attr-text" style="background:#f44336;">火</span><span class="attr-text" style="background:#8d6e63;">土</span><span class="attr-text" style="background:#ffb300;color:#000;">金</span><span class="attr-text" style="background:#2196f3;">水</span> の5属性があります。</li>
+        <li><strong>【相克】弱点を突く:</strong> 有利な属性の敵に術を放つとダメージが<strong>1.5倍</strong>になります。</li>
+        <li><strong>【相生】味方を支援:</strong> 相性の良い味方（例: 木が火へ）に術を放つと、次ターン対象の<strong>攻撃力が+3</strong>されます。※敵の相生属性を攻撃してしまうとダメージが半減します。</li>
+      </ul>
+      <h3>❖ 憑依（ひょうい）システム</h3>
+      <ul>
+        <li>味方の式神を陰陽師に<strong>憑依</strong>させると、その式神は消滅する代わりに、陰陽師の「HPと攻撃力（50%分）」が永続アップし、属性も上書きされます。</li>
+        <li>デッキに1枚だけ入れられる<strong>【十二天将】</strong>を憑依させると、強力な専用加護（射程アップなど）が得られます。</li>
+      </ul>
+    </div>
+    <button class="big-btn" style="margin-top: 20px; font-size:16px; padding:12px; background:#888; box-shadow:0 4px 0 #555;" onclick="showScreen('screen-title')">タイトルへ戻る</button>
+  </div>
+
   <div id="screen-deck" class="screen">
-    <h2>月の仲間を呼ぶ (3体選択)</h2>
+    <h2>式神編成（3体選択）</h2>
     <div id="deck-list"></div>
     <div id="deck-warning"></div>
-    <div id="deck-status" style="font-weight:normal; margin-bottom:15px; color:#00e5ff;">ナカマ: 0 / 3</div>
+    <div id="deck-status" style="font-weight:bold; margin-bottom:15px; color:#d32f2f;">選択中: 0 / 3</div>
     <div style="display:flex; gap:15px;">
-      <button class="big-btn" style="border-color:#555; color:#aaa;" onclick="showScreen('screen-title')">モドル</button>
-      <button id="btn-start-battle" class="big-btn" onclick="startBattle()" disabled>シュツジン！</button>
+      <button class="big-btn" style="background:#888; box-shadow:0 4px 0 #555; padding:10px 20px; font-size:16px;" onclick="showScreen('screen-title')">戻る</button>
+      <button id="btn-start-battle" class="big-btn" style="padding:10px 30px;" onclick="startBattle()" disabled>出陣</button>
     </div>
   </div>
 
   <div id="screen-battle" class="screen">
-    <h2>月面データベース『竹取の記憶』</h2>
+    <h2>陰陽盤上戦記</h2>
     <div id="board"></div>
 
     <div id="ui-panel">
       <div class="resource-bar">
-        <span class="mp-player">姫軍Luna: <span id="val-mp-player">5</span></span>
-        <span class="mp-enemy">闇軍Luna: <span id="val-mp-enemy">5</span></span>
+        <span class="mp-player">陣 呪力: <span id="val-mp-player">5</span></span>
+        <span class="mp-enemy">敵 呪力: <span id="val-mp-enemy">5</span></span>
       </div>
 
-      <div id="unit-info">采配を下す月の仲間を選んでください。</div>
+      <div id="unit-info">采配を下す式神を選べ</div>
       
       <div id="summon-panel"></div>
 
       <div class="btn-group">
-        <button id="btn-move" class="mode-btn">イドウ (移動)</button>
-        <button id="btn-attack" class="mode-btn">ジュツ (光術)</button>
-        <button id="btn-possess" class="mode-btn">ガッタイ (憑依)</button>
-        <button id="btn-summon" class="mode-btn">ヨビダシ (召喚)</button>
-        <button id="btn-cancel" class="mode-btn">トリケシ</button>
+        <button id="btn-move" class="mode-btn">移動</button>
+        <button id="btn-attack" class="mode-btn">術(攻/援)</button>
+        <button id="btn-possess" class="mode-btn">◆憑依</button>
+        <button id="btn-summon" class="mode-btn">★召喚</button>
+        <button id="btn-cancel" class="mode-btn">取消</button>
       </div>
-      <button id="execute-btn">ターン カクテイ (一斉解決)</button>
+      <button id="execute-btn">ターン確定（一斉解決）</button>
     </div>
 
     <div id="log"></div>
@@ -223,17 +181,17 @@
     <div id="result-overlay">
       <div id="result-title"></div>
       <div id="result-desc"></div>
-      <button class="big-btn" onclick="showScreen('screen-title')">タイトル ヘ モドル</button>
+      <button class="big-btn" onclick="showScreen('screen-title')">タイトルへ戻る</button>
     </div>
   </div>
 </div>
 
 <script>
 // ==========================================
-// マスターデータ (超かぐや姫！ドット絵ゲーム変換)
+// マスターデータ
 // ==========================================
 const GAME_CONFIG = {
-  LUNA_REWARD: { move: 1, risk_zone: 1, turn_end: 0 }, // MP ➡ Luna
+  MP_REWARD: { move: 1, risk_zone: 1, turn_end: 0 },
   DAMAGE: { weak_multiplier: 1.5, resist_multiplier: 0.5, collision: 2 },
   BUFF: { atk_boost: 3 }
 };
@@ -241,33 +199,31 @@ const ELEMENT_WEAK = { '木': '土', '土': '水', '水': '火', '火': '金', '
 const ELEMENT_BOOST = { '木': '火', '火': '土', '土': '金', '金': '水', '水': '木' };
 const BOARD_SIZE = 7;
 
-// 名前を月の仲間や闇の異形に変更、ドット絵のRPGっぽく
 const SHIKIGAMI_MASTER = [
-  { id: 'z_onibi', name: "月の兎・白", element: "火", hp: 4, atk: 2, reach: 1, cost: 1, isTensho: false, desc: "月の新兵" },
-  { id: 'z_dorotabo', name: "月の石兵", element: "土", hp: 8, atk: 1, reach: 1, cost: 1, isTensho: false, desc: "頑丈な石の兵" },
-  { id: 'z_kodama', name: "月の精・木", element: "木", hp: 5, atk: 1, reach: 1, cost: 1, isTensho: false, desc: "光る竹の精" },
-  { id: 'z_kappa', name: "月の雫", element: "水", hp: 6, atk: 2, reach: 1, cost: 2, isTensho: false, desc: "清らかな水の精" },
-  { id: 'z_kamaitachi', name: "月の天女", element: "金", hp: 4, atk: 3, reach: 2, cost: 2, isTensho: false, desc: "羽衣で遠攻撃" },
-  { id: 'z_nurikabe', name: "月の壁", element: "土", hp: 12, atk: 1, reach: 1, cost: 2, isTensho: false, desc: "通さぬ巨大壁" },
-  { id: 'z_yukionna', name: "月の雪女", element: "水", hp: 5, atk: 2, reach: 2, cost: 2, isTensho: false, desc: "冷気で遠攻撃" },
-  { id: 'z_wanyudo', name: "月の武者", element: "火", hp: 4, atk: 4, reach: 1, cost: 2, isTensho: false, desc: "剣術特化の兵" },
-  { id: 'z_tengu', name: "月の烏", element: "木", hp: 6, atk: 3, reach: 2, cost: 3, isTensho: false, desc: "素早い烏天狗" },
-  { id: 'z_kyoki', name: "月の狂戦士", element: "金", hp: 4, atk: 5, reach: 1, cost: 2, isTensho: false, desc: "捨て身の狂気の兵" },
+  { id: 'z_onibi', name: "鬼火", element: "火", hp: 4, atk: 2, reach: 1, cost: 1, isTensho: false, desc: "低コスト" },
+  { id: 'z_dorotabo', name: "泥田坊", element: "土", hp: 8, atk: 1, reach: 1, cost: 1, isTensho: false, desc: "低コスト・耐久" },
+  { id: 'z_kodama', name: "木霊", element: "木", hp: 5, atk: 1, reach: 1, cost: 1, isTensho: false, desc: "低コスト" },
+  { id: 'z_kappa', name: "河童", element: "水", hp: 6, atk: 2, reach: 1, cost: 2, isTensho: false, desc: "標準" },
+  { id: 'z_kamaitachi', name: "鎌鼬", element: "金", hp: 4, atk: 3, reach: 2, cost: 2, isTensho: false, desc: "射程2" },
+  { id: 'z_nurikabe', name: "塗壁", element: "土", hp: 12, atk: 1, reach: 1, cost: 2, isTensho: false, desc: "高耐久の壁" },
+  { id: 'z_yukionna', name: "雪女", element: "水", hp: 5, atk: 2, reach: 2, cost: 2, isTensho: false, desc: "遠距離攻撃" },
+  { id: 'z_wanyudo', name: "輪入道", element: "火", hp: 4, atk: 4, reach: 1, cost: 2, isTensho: false, desc: "攻撃特化" },
+  { id: 'z_tengu', name: "烏天狗", element: "木", hp: 6, atk: 3, reach: 2, cost: 3, isTensho: false, desc: "高機動・射程2" },
+  { id: 'z_kyoki', name: "狂骨", element: "金", hp: 4, atk: 5, reach: 1, cost: 2, isTensho: false, desc: "捨て身の火力" },
 
-  { id: 's_seiryu', name: "青龍・月", element: "木", hp: 12, atk: 5, reach: 2, cost: 3, isTensho: true, tenshoAbility: 'reach', desc: "憑依:射程+1" },
-  { id: 's_genbu', name: "玄武・月", element: "水", hp: 15, atk: 2, reach: 1, cost: 3, isTensho: true, tenshoAbility: 'hp', desc: "憑依:HP+10" },
-  { id: 's_touda', name: "騰蛇・月", element: "火", hp: 8, atk: 6, reach: 3, cost: 4, isTensho: true, tenshoAbility: 'atk_max', desc: "憑依:攻+5" },
-  { id: 's_byakko', name: "白虎・月", element: "金", hp: 10, atk: 7, reach: 1, cost: 4, isTensho: true, tenshoAbility: 'bruiser', desc: "憑依:攻+3/HP+6" },
-  { id: 's_sujaku', name: "朱雀・月", element: "火", hp: 10, atk: 5, reach: 2, cost: 4, isTensho: true, tenshoAbility: 'balance', desc: "憑依:攻+2/HP+5" },
-  { id: 's_kijin', name: "貴人・月", element: "土", hp: 12, atk: 6, reach: 2, cost: 4, isTensho: true, tenshoAbility: 'kijin', desc: "憑依:攻+3/HP+5" }
+  { id: 's_seiryu', name: "青龍", element: "木", hp: 12, atk: 5, reach: 2, cost: 3, isTensho: true, tenshoAbility: 'reach', desc: "憑依:射程+1" },
+  { id: 's_genbu', name: "玄武", element: "水", hp: 15, atk: 2, reach: 1, cost: 3, isTensho: true, tenshoAbility: 'hp', desc: "憑依:HP+10" },
+  { id: 's_touda', name: "騰蛇", element: "火", hp: 8, atk: 6, reach: 3, cost: 4, isTensho: true, tenshoAbility: 'atk_max', desc: "憑依:攻+5" },
+  { id: 's_byakko', name: "白虎", element: "金", hp: 10, atk: 7, reach: 1, cost: 4, isTensho: true, tenshoAbility: 'bruiser', desc: "憑依:攻+3/HP+6" },
+  { id: 's_sujaku', name: "朱雀", element: "火", hp: 10, atk: 5, reach: 2, cost: 4, isTensho: true, tenshoAbility: 'balance', desc: "憑依:攻+2/HP+5" },
+  { id: 's_kijin', name: "貴人", element: "土", hp: 12, atk: 6, reach: 2, cost: 4, isTensho: true, tenshoAbility: 'kijin', desc: "憑依:攻+3/HP+5" }
 ];
 
-// 初期配置もドット絵RPGライクに
 const INITIAL_UNITS = [
-  { id: "p_leader", name: "月姫", owner: "player", element: "無", hp: 20, atk: 2, buffAtk: 0, x: 3, y: 6, reach: 1, isLeader: true },
-  { id: "e_leader", name: "闇の核", owner: "enemy", element: "無", hp: 25, atk: 3, buffAtk: 0, x: 3, y: 0, reach: 1, isLeader: true },
-  { id: "u1", name: "月の武者", owner: "player", element: "木", hp: 10, atk: 4, buffAtk: 0, x: 2, y: 5, reach: 1, isTensho: false },
-  { id: "u2", name: "闇の異形", owner: "enemy", element: "水", hp: 10, atk: 4, buffAtk: 0, x: 4, y: 1, reach: 2, isTensho: false }
+  { id: "p_leader", name: "陰陽師", owner: "player", element: "無", hp: 20, atk: 2, buffAtk: 0, x: 3, y: 6, reach: 1, isLeader: true },
+  { id: "e_leader", name: "敵将", owner: "enemy", element: "無", hp: 25, atk: 3, buffAtk: 0, x: 3, y: 0, reach: 1, isLeader: true },
+  { id: "u1", name: "牛頭", owner: "player", element: "木", hp: 10, atk: 4, buffAtk: 0, x: 2, y: 5, reach: 1, isTensho: false },
+  { id: "u2", name: "馬頭", owner: "enemy", element: "水", hp: 10, atk: 4, buffAtk: 0, x: 4, y: 1, reach: 2, isTensho: false }
 ];
 
 // ==========================================
@@ -275,7 +231,7 @@ const INITIAL_UNITS = [
 // ==========================================
 let playerDeckIds = [];
 let gameData = { units: [] };
-let mp = { player: 0, enemy: 0 }; // MP ➡ Luna
+let mp = { player: 0, enemy: 0 };
 let uiState = 'IDLE'; 
 let activeUnitId = null;
 let planned = {}; let plannedSummons = []; let selectedSummonTemplate = null; let unitCounter = 3;
@@ -298,12 +254,12 @@ function initDeckScreen() {
     card.dataset.id = s.id;
     const typeClass = s.isTensho ? "dc-type tensho" : "dc-type";
     card.innerHTML = `
-      <div class="attr-badge attr-${s.element}">${s.element}</div>
+      <div class="attr-badge attr-${s.element}" style="position:static; margin: 0 auto 4px;">${s.element}</div>
       <div class="dc-name">${s.name}</div>
-      <div class="${typeClass}">${s.isTensho ? '[月の天将]' : '[月の仲間]'}</div>
-      <div class="dc-stats">ATK:${s.atk} HP:${s.hp} R:${s.reach}</div>
-      <div class="dc-cost">LNA:${s.cost}</div>
-      <div style="font-size:8px; color:#888; margin-top:2px;">${s.desc}</div>
+      <div class="${typeClass}">${s.isTensho ? '【十二天将】' : '【通常式神】'}</div>
+      <div class="dc-stats">⚔️${s.atk} 💖${s.hp} 射${s.reach}</div>
+      <div class="dc-cost">呪力:${s.cost}</div>
+      <div style="font-size:9px; color:#888; margin-top:4px;">${s.desc}</div>
     `;
     card.onclick = () => toggleDeckSelection(card, s.id);
     listEl.appendChild(card);
@@ -322,7 +278,7 @@ function toggleDeckSelection(cardEl, id) {
     cardEl.classList.remove('selected');
   } else {
     if (playerDeckIds.length >= 3) {
-      warningEl.innerText = "[ERROR] ナカマは3人までしか選べません。";
+      warningEl.innerText = "※デッキは最大3体までです。";
       return;
     }
     if (targetShikigami.isTensho) {
@@ -330,7 +286,7 @@ function toggleDeckSelection(cardEl, id) {
         return SHIKIGAMI_MASTER.find(m => m.id === deckId).isTensho;
       }).length;
       if (currentTenshoCount >= 1) {
-        warningEl.innerText = "[ERROR] 天将は1人までしか選べません。";
+        warningEl.innerText = "※十二天将はデッキに1体までしか編成できません！";
         return;
       }
     }
@@ -342,7 +298,7 @@ function toggleDeckSelection(cardEl, id) {
 
 function updateDeckStatus() {
   const count = playerDeckIds.length;
-  document.getElementById('deck-status').innerText = `ナカマ: ${count} / 3`;
+  document.getElementById('deck-status').innerText = `選択中: ${count} / 3`;
   document.getElementById('btn-start-battle').disabled = (count !== 3);
   
   const hasTensho = playerDeckIds.some(id => SHIKIGAMI_MASTER.find(m => m.id === id).isTensho);
@@ -377,9 +333,8 @@ function getEffectiveStats(unit) {
   return { effAtk, effReach };
 }
 
-// ログ用の名前整形関数（ドット絵ゲーム風陣営名）
 function getUnitLogName(unit) {
-  return (unit.owner === 'player' ? "姫軍の" : "闇軍の") + unit.name;
+  return (unit.owner === 'player' ? "味方の" : "敵の") + unit.name;
 }
 
 // ==========================================
@@ -392,7 +347,7 @@ function addLog(msg, type="") {
   if(type === "heal") cssClass = "log-heal";
   if(type === "sys") cssClass = "log-sys";
   if(type === "possess") cssClass = "log-possess";
-  logEl.innerHTML += `<span class="${cssClass}">> ${msg}</span><br>`; 
+  logEl.innerHTML += `<span class="${cssClass}">${msg}</span><br>`; 
   logEl.scrollTop = logEl.scrollHeight; 
 }
 
@@ -403,7 +358,7 @@ function startBattle() {
     const s = SHIKIGAMI_MASTER.find(m => m.id === id);
     const btn = document.createElement('button');
     btn.className = 'summon-btn';
-    btn.innerText = `${s.name} (Luna${s.cost})`;
+    btn.innerText = `${s.name} (呪${s.cost})`;
     btn.onclick = () => startSummon(s.id);
     panel.appendChild(btn);
   });
@@ -413,10 +368,10 @@ function startBattle() {
   document.getElementById('btn-possess').onclick = () => {
     if (!activeUnitId) return;
     const u = gameData.units.find(un => un.id === activeUnitId);
-    if (u.isLeader) { addLog(`[警告] 将(月姫)自身は憑依できません。`, "sys"); return; }
-    if (u.owner !== 'player') { addLog(`[警告] 敵の軍勢は選べません。`, "sys"); return; }
+    if (u.isLeader) { addLog(`[警告] 陰陽師自身は憑依できぬ。`, "sys"); return; }
+    if (u.owner !== 'player') { addLog(`[警告] 敵の式神は選べぬ。`, "sys"); return; }
     planned[activeUnitId] = { move: null, attack: null, possess: true };
-    uiState = 'IDLE'; addLog(`[SYNC] ${u.name} の憑依(合体)を予約しました。`, "possess"); render();
+    uiState = 'IDLE'; addLog(`【予約】${u.name} を陰陽師に憑依させる。`, "possess"); render();
   };
   document.getElementById('btn-summon').onclick = () => {
     uiState = 'IDLE'; document.getElementById('summon-panel').style.display = 'flex'; render();
@@ -436,11 +391,11 @@ function startBattle() {
   }
 
   gameData.units = JSON.parse(JSON.stringify(INITIAL_UNITS));
-  mp = { player: 5, enemy: 5 }; // MP ➡ Luna
+  mp = { player: 5, enemy: 5 };
   planned = {}; plannedSummons = []; uiState = 'IDLE'; activeUnitId = null; unitCounter = INITIAL_UNITS.length;
   document.getElementById('result-overlay').style.display = 'none';
   logEl.innerHTML = "";
-  addLog("月面防衛線に到着。戦闘シーケンスを開始します。", "sys");
+  addLog("システム: 結界が構築された。戦闘開始！", "sys");
   showScreen('screen-battle');
   render();
 }
@@ -459,10 +414,10 @@ function startSummon(templateId) {
   const template = SHIKIGAMI_MASTER.find(m => m.id === templateId);
   const currentReservedMP = plannedSummons.reduce((sum, s) => sum + s.cost, 0);
   if (mp.player - currentReservedMP < template.cost) {
-    addLog(`[ERROR] Lunaが不足しています。(Require: ${template.cost})`, "sys"); return;
+    addLog(`[警告] 呪力が足りませぬ。(必要: ${template.cost})`, "sys"); return;
   }
   selectedSummonTemplate = templateId; uiState = 'SELECTING_SUMMON_TARGET';
-  document.getElementById('unit-info').innerText = `> ${template.name} の展開座標を指定してください。`;
+  document.getElementById('unit-info').innerText = `【召喚】${template.name} の配置マスを選択`;
 }
 
 function handleCellClick(x, y) {
@@ -473,7 +428,7 @@ function handleCellClick(x, y) {
       if (unit) {
         if (unit.owner === 'enemy') {
            const stats = getEffectiveStats(unit);
-           addLog(`Scan: ${unit.name} (HP:${unit.hp} / ATK:${stats.effAtk} / R:${stats.effReach} / Attr:${unit.element})`, "sys");
+           addLog(`※敵将の情報: ${unit.name} (HP:${unit.hp} / 攻:${stats.effAtk} / 射:${stats.effReach} / 属:${unit.element})`, "sys");
         } else {
            activeUnitId = unit.id; 
            document.getElementById('summon-panel').style.display = 'none';
@@ -500,7 +455,7 @@ function handleCellClick(x, y) {
           plannedSummons = plannedSummons.filter(s => Math.abs(x - s.x) <= 1 && Math.abs(y - s.y) <= 1);
         }
       } else { 
-        addLog(`[ERROR] 指定座標は移動範囲外です。`, "sys"); 
+        addLog(`[警告] 移動は一歩のみです。`, "sys"); 
       }
       break;
 
@@ -515,7 +470,7 @@ function handleCellClick(x, y) {
         planned[activeUnitId].possess = false; 
         uiState = 'IDLE';
       } else { 
-        addLog(`[ERROR] 指定座標は術の範囲外です。`, "sys"); 
+        addLog(`[警告] 射程が届きませぬ。`, "sys"); 
       }
       break;
 
@@ -532,17 +487,17 @@ function handleCellClick(x, y) {
         const alreadySummoned = plannedSummons.find(s => s.x === x && s.y === y);
         
         if (isProjectedOccupied || alreadySummoned) {
-          addLog(`[ERROR] 対象セクタは占有予定です。`, "sys");
+          addLog(`[警告] そのマスは移動後のユニットで埋まるか、既に予約済です。`, "sys");
           return;
         }
 
         const template = SHIKIGAMI_MASTER.find(m => m.id === selectedSummonTemplate);
         plannedSummons.push({ templateId: selectedSummonTemplate, x: x, y: y, cost: template.cost });
-        addLog(`[TASK] ${template.name} の展開シーケンスを予約しました。`);
+        addLog(`【予約】${template.name} の召喚を命じた。`);
         uiState = 'IDLE'; 
         document.getElementById('summon-panel').style.display = 'none';
       } else { 
-        addLog(`[ERROR] 月姫周囲セクタ以外には展開できません。`, "sys"); 
+        addLog(`[警告] 召喚は陰陽師の周囲のみ可能です。`, "sys"); 
       }
       break;
   }
@@ -576,20 +531,20 @@ function planEnemyActionsAI() {
 
 function calculateManaGain(unit, prevX, prevY) {
   let gainedMP = 0;
-  if (unit.x !== prevX || unit.y !== prevY) gainedMP += GAME_CONFIG.LUNA_REWARD.move;
+  if (unit.x !== prevX || unit.y !== prevY) gainedMP += GAME_CONFIG.MP_REWARD.move;
   const isNearEnemy = gameData.units.some(other => 
     other.owner !== unit.owner && Math.abs(other.x - unit.x) <= 1 && Math.abs(other.y - unit.y) <= 1
   );
-  if (isNearEnemy) gainedMP += GAME_CONFIG.LUNA_REWARD.risk_zone;
+  if (isNearEnemy) gainedMP += GAME_CONFIG.MP_REWARD.risk_zone;
   return gainedMP;
 }
 
-// 完全版カスケード衝突判定ロジック (レトロRPG風ログ)
+// ★完全版カスケード衝突判定ロジック
 function resolveTurn() {
-  addLog("--- BATCH PROCESS START ---", "sys");
+  addLog("=== ターン一斉解決 ===", "sys");
   gameData.units.forEach(u => { u.buffAtk = 0; });
 
-  // ① 衝突判定
+  // ① 玉突き対応の衝突判定
   let collidedUnitIds = new Set();
   let resolving = true;
   let loopCount = 0;
@@ -598,6 +553,7 @@ function resolveTurn() {
     resolving = false;
     let projected = {};
     
+    // 現在の予測位置をマッピング
     gameData.units.forEach(u => {
       const px = planned[u.id]?.move ? planned[u.id].move.x : u.x;
       const py = planned[u.id]?.move ? planned[u.id].move.y : u.y;
@@ -606,6 +562,7 @@ function resolveTurn() {
       projected[key].push(u.id);
     });
 
+    // 1マスに2体以上集まる「同じマスへの衝突」
     for (const [key, unitIds] of Object.entries(projected)) {
       if (unitIds.length > 1) {
         unitIds.forEach(id => {
@@ -618,6 +575,7 @@ function resolveTurn() {
       }
     }
 
+    // 「すれ違い」の衝突
     gameData.units.forEach(u1 => {
       if (planned[u1.id]?.move) {
         const destX = planned[u1.id].move.x;
@@ -635,8 +593,9 @@ function resolveTurn() {
     loopCount++;
   }
 
+  // 衝突ダメージ
   if (collidedUnitIds.size > 0) {
-    addLog(`[激突] プログラム同士の衝突を検知。`, "atk");
+    addLog(`【激突】盤上で衝突発生！移動阻害！`, "atk");
     collidedUnitIds.forEach(id => {
       const unit = gameData.units.find(u => u.id === id);
       if (unit) {
@@ -646,17 +605,17 @@ function resolveTurn() {
     });
   }
 
-  // 呪力(Luna)獲得と最終移動の確定
-  let turnMpGain = { player: GAME_CONFIG.LUNA_REWARD.turn_end, enemy: GAME_CONFIG.LUNA_REWARD.turn_end };
+  // 呪力獲得と最終移動の確定
+  let turnMpGain = { player: GAME_CONFIG.MP_REWARD.turn_end, enemy: GAME_CONFIG.MP_REWARD.turn_end };
   gameData.units.forEach(u => {
     const prevX = u.x; const prevY = u.y;
     if (planned[u.id]?.move) { u.x = planned[u.id].move.x; u.y = planned[u.id].move.y; }
     const gain = calculateManaGain(u, prevX, prevY);
     if (gain > 0) turnMpGain[u.owner] += gain;
   });
-  mp.player += turnMpGain.player; mp.enemy += turnMpGain.enemy; // MP ➡ Luna
+  mp.player += turnMpGain.player; mp.enemy += turnMpGain.enemy;
 
-  // ② 憑依（合体/オーバーライド）
+  // ② 憑依解決
   gameData.units.forEach(u => {
     if (planned[u.id]?.possess && u.hp > 0) {
       const leader = gameData.units.find(l => l.isLeader && l.owner === u.owner);
@@ -668,21 +627,21 @@ function resolveTurn() {
 
         let tenshoMsg = "";
         if (u.isTensho) {
-          if (u.tenshoAbility === 'reach') { leader.reach += 1; tenshoMsg = " [SYSPATH: R+1]"; } 
-          else if (u.tenshoAbility === 'atk_max') { leader.atk += 5; tenshoMsg = " [SYSPATH: ATK+5]"; }
-          else if (u.tenshoAbility === 'hp') { leader.hp += 10; tenshoMsg = " [SYSPATH: HP+10]"; }
-          else if (u.tenshoAbility === 'balance') { leader.atk += 2; leader.hp += 5; tenshoMsg = " [SYSPATH: ATK+2/HP+5]"; }
-          else if (u.tenshoAbility === 'bruiser') { leader.atk += 3; leader.hp += 6; tenshoMsg = " [SYSPATH: ATK+3/HP+6]"; }
-          else if (u.tenshoAbility === 'kijin') { leader.atk += 3; leader.hp += 5; tenshoMsg = " [SYSPATH: ATK+3/HP+5]"; }
+          if (u.tenshoAbility === 'reach') { leader.reach += 1; tenshoMsg = " 【青龍の加護: 射程+1】"; } 
+          else if (u.tenshoAbility === 'atk_max') { leader.atk += 5; tenshoMsg = " 【騰蛇の加護: 攻+5】"; }
+          else if (u.tenshoAbility === 'hp') { leader.hp += 10; tenshoMsg = " 【玄武の加護: HP+10】"; }
+          else if (u.tenshoAbility === 'balance') { leader.atk += 2; leader.hp += 5; tenshoMsg = " 【朱雀の加護: 攻+2/HP+5】"; }
+          else if (u.tenshoAbility === 'bruiser') { leader.atk += 3; leader.hp += 6; tenshoMsg = " 【白虎の加護: 攻+3/HP+6】"; }
+          else if (u.tenshoAbility === 'kijin') { leader.atk += 3; leader.hp += 5; tenshoMsg = " 【貴人の加護: 攻+3/HP+5】"; }
         }
 
-        addLog(`[SYNC] ${getUnitLogName(u)} が月姫と合体(上書き)。 (HP+${hpBonus} / ATK+${atkBonus} / Attr:${u.element})${tenshoMsg}`, "possess");
+        addLog(`【憑依】${getUnitLogName(u)} が陰陽師と一体化した！ (HP+${hpBonus} / 攻+${atkBonus} / 属性:${u.element})${tenshoMsg}`, "possess");
         u.hp = 0; 
       }
     }
   });
 
-  // ③ 攻撃解決 (光術解決)
+  // ③ 攻撃解決
   gameData.units.forEach(u => {
     const atkPlot = planned[u.id]?.attack;
     if (!atkPlot) return;
@@ -692,20 +651,20 @@ function resolveTurn() {
       if (target.owner !== u.owner) {
         let dmg = u.atk + u.buffAtk; let msg = "";
         if (ELEMENT_WEAK[u.element] === target.element) {
-          dmg = Math.floor(dmg * GAME_CONFIG.DAMAGE.weak_multiplier); msg = "(CRITICAL!)";
+          dmg = Math.floor(dmg * GAME_CONFIG.DAMAGE.weak_multiplier); msg = "(弱点!)";
         } else if (ELEMENT_BOOST[u.element] === target.element) {
-          dmg = Math.floor(dmg * GAME_CONFIG.DAMAGE.resist_multiplier); msg = "(RESIST...)";
+          dmg = Math.floor(dmg * GAME_CONFIG.DAMAGE.resist_multiplier); msg = "(軽減...)";
         }
         target.hp -= dmg;
-        addLog(`[光術] ${getUnitLogName(u)} -> ${getUnitLogName(target)} に ${dmg}ダメージ ${msg}`, "atk");
+        addLog(`【攻撃】${getUnitLogName(u)} → ${getUnitLogName(target)}に ${dmg}ダメージ ${msg}`, "atk");
       } else {
         if (ELEMENT_BOOST[u.element] === target.element) {
           target.buffAtk += GAME_CONFIG.BUFF.atk_boost;
-          addLog(`[BUFF] ${getUnitLogName(u)} -> ${getUnitLogName(target)} に相生バフ。(Next ATK+${GAME_CONFIG.BUFF.atk_boost})`, "heal");
+          addLog(`【支援】${getUnitLogName(u)} → ${getUnitLogName(target)}に相生の気！(次ターン攻+${GAME_CONFIG.BUFF.atk_boost})`, "heal");
         }
       }
     } else if (u.hp > 0 && !planned[u.id]?.possess) { 
-      addLog(`[MISS] ${getUnitLogName(u)} のプロセスは空振りました。`); 
+      addLog(`【空振り】${getUnitLogName(u)}の術は空を切った...`); 
     }
   });
 
@@ -714,17 +673,16 @@ function resolveTurn() {
     const isOccupied = gameData.units.find(u => u.x === summon.x && u.y === summon.y);
     const template = SHIKIGAMI_MASTER.find(m => m.id === summon.templateId);
     if (isOccupied) {
-      addLog(`[ERROR] 展開対象セクタに別プロセスが存在します。`, "sys");
+      addLog(`【召喚失敗】その場所には既に者がおり召喚できなかった`, "sys");
     } else {
-      mp.player -= summon.cost; // MP ➡ Luna
-      unitCounter++;
+      mp.player -= summon.cost; unitCounter++;
       gameData.units.push({
         id: `u_${unitCounter}`, name: template.name, owner: 'player', element: template.element,
         hp: template.hp, atk: template.atk, buffAtk: 0, reach: template.reach, 
         isTensho: template.isTensho, tenshoAbility: template.tenshoAbility,
         x: summon.x, y: summon.y
       });
-      addLog(`[DEPLOY] 味方の${template.name} が起動しました。`, "heal");
+      addLog(`【召喚】味方の${template.name} が戦場に顕現した！`, "heal");
     }
   });
   plannedSummons = [];
@@ -732,7 +690,7 @@ function resolveTurn() {
   let playerLeaderDead = false; let enemyLeaderDead = false;
   gameData.units = gameData.units.filter(u => {
     if (u.hp <= 0) {
-      if (!planned[u.id]?.possess) addLog(`[KILL] ${getUnitLogName(u)} が完全停止。`, "atk");
+      if (!planned[u.id]?.possess) addLog(`【撃破】${getUnitLogName(u)} が倒れた！`, "atk");
       if (u.isLeader) {
         if (u.owner === 'player') playerLeaderDead = true;
         if (u.owner === 'enemy') enemyLeaderDead = true;
@@ -751,11 +709,11 @@ function resolveTurn() {
   if (playerLeaderDead || enemyLeaderDead) {
     let title = ""; let desc = ""; let color = "";
     if (playerLeaderDead && enemyLeaderDead) {
-      title = "DRAW"; desc = "両陣営のコアが同時に停止しました。"; color = "#aaa";
+      title = "引き分け"; desc = "両陣営の陰陽師が同時に倒れました。"; color = "#666";
     } else if (playerLeaderDead) {
-      title = "GAME OVER"; desc = "月姫の光が失われました..."; color = "#ff1744";
+      title = "敗北"; desc = "味方の陰陽師が討ち取られました..."; color = "#d32f2f";
     } else {
-      title = "VICTORY"; desc = "データベースの防衛に成功しました！"; color = "#4caf50";
+      title = "勝利"; desc = "見事、ケガレを祓いました！"; color = "#2e7d32";
     }
     document.getElementById('result-title').innerText = title;
     document.getElementById('result-title').style.color = color;
@@ -769,8 +727,8 @@ function render() {
   cells.forEach(c => { c.innerHTML = ''; c.className = 'cell'; });
 
   const currentReservedMP = plannedSummons.reduce((sum, s) => sum + s.cost, 0);
-  document.getElementById('val-mp-player').innerText = mp.player - currentReservedMP; // MP ➡ Luna
-  document.getElementById('val-mp-enemy').innerText = mp.enemy; // MP ➡ Luna
+  document.getElementById('val-mp-player').innerText = mp.player - currentReservedMP;
+  document.getElementById('val-mp-enemy').innerText = mp.enemy;
 
   if (uiState !== 'SELECTING_SUMMON_TARGET') {
     const activeUnit = gameData.units.find(u => u.id === activeUnitId);
@@ -779,13 +737,13 @@ function render() {
       const atkText = stats.effAtk > activeUnit.atk ? `${stats.effAtk}(予測)` : stats.effAtk;
       const reachText = stats.effReach > activeUnit.reach ? `${stats.effReach}(予測)` : stats.effReach;
       
-      document.getElementById('unit-info').innerText = `> TARGET: ${activeUnit.name} | ATK:${atkText} R:${reachText} Attr:${activeUnit.element}`;
+      document.getElementById('unit-info').innerText = `選択中: ${activeUnit.name} (攻${atkText} / 射${reachText} / ${activeUnit.element})`;
       
       document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
       if (uiState === 'SELECTING_MOVE') document.getElementById('btn-move').classList.add('active');
       if (uiState === 'SELECTING_ATTACK') document.getElementById('btn-attack').classList.add('active');
     } else {
-      document.getElementById('unit-info').innerText = `> 待機中... 采配を下す月の仲間を選んでください。`;
+      document.getElementById('unit-info').innerText = `采配を下す式神を選べ`;
       document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
     }
   }
@@ -811,7 +769,7 @@ function render() {
     div.innerHTML = `
       ${attrBadge}
       <div class="u-name">${u.name}</div>
-      <div class="u-stats">A:${dispAtk} H:${u.hp}</div>
+      <div class="u-stats">⚔️${dispAtk} 💖${u.hp}</div>
     `;
     cells[idx].appendChild(div);
 
